@@ -22,10 +22,14 @@ export async function getUsers() {
 
 export async function getCurrentUser() {
     try {
+        console.log("getCurrentUser: Fetching for ovi@razibmarketing.net");
         // For now, fetching the Admin user by email as "current"
         const user = await prisma.user.findUnique({
             where: { email: "ovi@razibmarketing.net" }
         })
+        if (!user) {
+            console.error("getCurrentUser: User not found in database.");
+        }
         return user ? JSON.parse(JSON.stringify(user)) : null
     } catch (error) {
         console.error("Failed to fetch current user:", error);
@@ -43,6 +47,8 @@ export async function updateUser(id: string, data: {
     cover?: string;
 }) {
     try {
+        if (!id) throw new Error("User ID is required for update");
+        console.log(`updateUser: Updating user ${id}`, Object.keys(data));
         const user = await prisma.user.update({
             where: { id },
             data,
@@ -52,12 +58,13 @@ export async function updateUser(id: string, data: {
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error) {
         console.error("Failed to update user:", error);
-        return { success: false, error: "Failed to update user" };
+        return { success: false, error: error instanceof Error ? error.message : "Failed to update user" };
     }
 }
 
 export async function deleteUser(id: string) {
     try {
+        if (!id) throw new Error("User ID is required for deletion");
         // In a real app, you might want to check permissions or dependencies
         await prisma.user.delete({
             where: { id },
@@ -77,6 +84,13 @@ export async function createUser(data: {
     department: string;
 }) {
     try {
+        console.log("createUser: Creating user", data.email);
+        // Check if user already exists
+        const existing = await prisma.user.findUnique({ where: { email: data.email } });
+        if (existing) {
+            return { success: false, error: "A user with this email already exists." };
+        }
+
         const user = await prisma.user.create({
             data: {
                 ...data,
@@ -87,6 +101,6 @@ export async function createUser(data: {
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error) {
         console.error("Failed to create user:", error);
-        return { success: false, error: "Failed to create user" };
+        return { success: false, error: error instanceof Error ? error.message : "Failed to create user" };
     }
 }

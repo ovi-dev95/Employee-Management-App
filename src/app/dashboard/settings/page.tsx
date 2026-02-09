@@ -268,17 +268,27 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
     }
 
     const handleInvite = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsInviting(true)
-        const result = await createUser(inviteData)
-        if (result.success) {
-            setIsInviteModalOpen(false)
-            setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB' })
-            onRefresh()
-        } else {
-            alert('Failed to invite member: ' + result.error)
+        try {
+            e.preventDefault()
+            console.log("handleInvite: Submitting invite for", inviteData.email);
+            setIsInviting(true)
+            const result = await createUser(inviteData)
+            console.log("handleInvite: Create user result", result);
+            if (result.success) {
+                console.log("handleInvite: Success! Refreshing list.");
+                setIsInviteModalOpen(false)
+                setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB' })
+                await onRefresh()
+            } else {
+                console.error("handleInvite: Failed", result.error);
+                alert('Failed to invite member: ' + result.error)
+            }
+        } catch (error) {
+            console.error("handleInvite: Unexpected error", error);
+            alert('An unexpected error occurred while inviting the member.')
+        } finally {
+            setIsInviting(false)
         }
-        setIsInviting(false)
     }
 
     return (

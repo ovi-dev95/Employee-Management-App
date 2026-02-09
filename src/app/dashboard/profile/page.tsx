@@ -14,12 +14,21 @@ export default function ProfilePage() {
     const [user, setUser] = useState<any>(null)
 
     const fetchUser = async () => {
-        setIsLoading(true)
-        const data = await getCurrentUser()
-        if (data) {
-            setUser(data)
+        try {
+            setIsLoading(true)
+            const data = await getCurrentUser()
+            if (data) {
+                setUser(data)
+            } else {
+                console.error("fetchUser: No user data returned")
+                setUser(null)
+            }
+        } catch (error) {
+            console.error("fetchUser: Error fetching user", error)
+            setUser(null)
+        } finally {
+            setIsLoading(false)
         }
-        setIsLoading(false)
     }
 
     useEffect(() => {
@@ -27,6 +36,7 @@ export default function ProfilePage() {
     }, [])
 
     const handleFileUpload = async (type: 'avatar' | 'cover') => {
+        if (!user) return
         const input = document.createElement('input')
         input.type = 'file'
         input.accept = 'image/*'
@@ -51,6 +61,7 @@ export default function ProfilePage() {
 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!user) return
         setIsSaving(true)
         const result = await updateUser(user.id, {
             name: user.name,
@@ -71,17 +82,27 @@ export default function ProfilePage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-slate-500 font-medium">Loading your profile...</p>
             </div>
         )
     }
 
     if (!user) {
         return (
-            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <p className="text-slate-500">Could not load profile data.</p>
-                <button onClick={fetchUser} className="mt-4 text-blue-600 hover:underline">Try Again</button>
+            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md mx-auto mt-20">
+                <div className="w-16 h-16 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User2 className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Could not load profile</h2>
+                <p className="text-slate-500 mb-6">There was an issue fetching your account data. Please try again or contact support.</p>
+                <button
+                    onClick={fetchUser}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors"
+                >
+                    Retry Loading
+                </button>
             </div>
         )
     }
@@ -141,7 +162,7 @@ export default function ProfilePage() {
                                 {user.avatar ? (
                                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2)
+                                    (user.name || '?').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
                                 )}
                             </div>
                             <button

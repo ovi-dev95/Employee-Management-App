@@ -73,7 +73,13 @@ export function Sidebar() {
                     <User className="w-5 h-5" />
                     <span className="font-medium">My Profile</span>
                 </Link>
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200">
+                <button
+                    onClick={() => {
+                        document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"
+                        window.location.href = '/login'
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
+                >
                     <LogOut className="w-5 h-5" />
                     <span className="font-medium">Sign Out</span>
                 </button>
