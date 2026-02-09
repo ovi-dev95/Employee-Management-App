@@ -273,111 +273,120 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
             </div>
 
             <div className="space-y-4">
-                {users.map((member, i) => (
-                    <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
-                                    {member.name[0]}
-                                </div>
-                                <div>
-                                    <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
-                                    <p className="text-xs text-slate-500">{member.email}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                                    {member.role}
-                                </span>
-                                <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => setEditingUser(member)}
-                                        className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
-                                    >
-                                        <TerminalSquare className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(member.id)}
-                                        disabled={isDeleting === member.id}
-                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {editingUser?.id === member.id && (
-                            <motion.form
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4"
-                                onSubmit={handleUpdate}
-                            >
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
-                                        <input
-                                            type="text"
-                                            value={editingUser.name}
-                                            onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
-                                        <input
-                                            type="email"
-                                            value={editingUser.email}
-                                            onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</label>
-                                        <select
-                                            value={editingUser.role}
-                                            onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        >
-                                            <option value="ADMIN">ADMIN</option>
-                                            <option value="EDITOR">EDITOR</option>
-                                            <option value="SUBSCRIBER">SUBSCRIBER</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Department</label>
-                                        <select
-                                            value={editingUser.department}
-                                            onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
-                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        >
-                                            <option value="WEB">WEB</option>
-                                            <option value="UI_UX">UI/UX</option>
-                                            <option value="SEO">SEO</option>
-                                            <option value="PAID_MEDIA">PAID MEDIA</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setEditingUser(null)}
-                                        className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
-                                    >
-                                        Save Member
-                                    </button>
-                                </div>
-                            </motion.form>
-                        )}
+                {users.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-12 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/30 dark:bg-slate-900/10">
+                        <Users className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-4" />
+                        <p className="text-slate-500 font-medium">No team members found</p>
+                        <p className="text-xs text-slate-400 mt-1">Invite your team to get started</p>
                     </div>
-                ))}
+                ) : (
+                    users.map((member, i) => (
+                        <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
+                            {/* ... existing member row content ... */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+                                        {member.name[0]}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
+                                        <p className="text-xs text-slate-500">{member.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                                        {member.role}
+                                    </span>
+                                    <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => setEditingUser(member)}
+                                            className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
+                                        >
+                                            <TerminalSquare className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(member.id)}
+                                            disabled={isDeleting === member.id}
+                                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {editingUser?.id === member.id && (
+                                <motion.form
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4"
+                                    onSubmit={handleUpdate}
+                                >
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
+                                            <input
+                                                type="text"
+                                                value={editingUser.name}
+                                                onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
+                                            <input
+                                                type="email"
+                                                value={editingUser.email}
+                                                onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</label>
+                                            <select
+                                                value={editingUser.role}
+                                                onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                                                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                            >
+                                                <option value="ADMIN">ADMIN</option>
+                                                <option value="EDITOR">EDITOR</option>
+                                                <option value="SUBSCRIBER">SUBSCRIBER</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Department</label>
+                                            <select
+                                                value={editingUser.department}
+                                                onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
+                                                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                            >
+                                                <option value="WEB">WEB</option>
+                                                <option value="UI_UX">UI/UX</option>
+                                                <option value="SEO">SEO</option>
+                                                <option value="PAID_MEDIA">PAID MEDIA</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingUser(null)}
+                                            className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
+                                        >
+                                            Save Member
+                                        </button>
+                                    </div>
+                                </motion.form>
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     )

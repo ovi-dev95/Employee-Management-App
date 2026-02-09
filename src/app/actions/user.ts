@@ -12,7 +12,8 @@ export async function getUsers() {
             }
         });
         console.log(`Successfully fetched ${users.length} users.`);
-        return users;
+        // Ensure data is serializable for Next.js Server Components/Actions
+        return JSON.parse(JSON.stringify(users));
     } catch (error) {
         console.error("Failed to fetch users:", error);
         return [];
