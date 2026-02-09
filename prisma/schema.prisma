@@ -14,8 +14,11 @@ model User {
   email              String       @unique
   password           String
   role               String       @default("SUBSCRIBER")
+  position           String?
   department         String       @default("WEB")
   points             Int          @default(0)
+  avatar             String?
+  cover              String?
   emailNotifications Boolean      @default(true)
   pushNotifications  Boolean      @default(true)
   twoFactorEnabled   Boolean      @default(false)

@@ -11,7 +11,7 @@ export async function getUsers() {
                 createdAt: 'desc'
             }
         });
-        console.log(`Successfully fetched ${users.length} users.`);
+        console.log(`Successfully fetched ${users.length} users. IDs: ${users.map(u => u.id).join(', ')}`);
         // Ensure data is serializable for Next.js Server Components/Actions
         return JSON.parse(JSON.stringify(users));
     } catch (error) {
@@ -20,11 +20,27 @@ export async function getUsers() {
     }
 }
 
+export async function getCurrentUser() {
+    try {
+        // For now, fetching the Admin user by email as "current"
+        const user = await prisma.user.findUnique({
+            where: { email: "ovi@razibmarketing.net" }
+        })
+        return user ? JSON.parse(JSON.stringify(user)) : null
+    } catch (error) {
+        console.error("Failed to fetch current user:", error);
+        return null
+    }
+}
+
 export async function updateUser(id: string, data: {
     name?: string;
     email?: string;
     role?: string;
     department?: string;
+    position?: string;
+    avatar?: string;
+    cover?: string;
 }) {
     try {
         const user = await prisma.user.update({
@@ -32,7 +48,8 @@ export async function updateUser(id: string, data: {
             data,
         });
         revalidatePath("/dashboard/settings");
-        return { success: true, user };
+        revalidatePath("/dashboard/profile");
+        return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error) {
         console.error("Failed to update user:", error);
         return { success: false, error: "Failed to update user" };

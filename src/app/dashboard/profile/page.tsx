@@ -1,35 +1,113 @@
 "use client"
 
-import { useState } from 'react'
-import { User2, Calendar, Mail, Building, LogOut, Award, Briefcase, Camera, Settings, Bell, Shield, PenSquare } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { User2, Calendar, Mail, Building, LogOut, Award, Briefcase, Camera, Settings, Bell, Shield, PenSquare, CheckCircle2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { getCurrentUser, updateUser } from '@/app/actions/user'
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState('overview')
+    const [isLoading, setIsLoading] = useState(true)
+    const [isSaving, setIsSaving] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
+    const [user, setUser] = useState<any>(null)
 
-    // Mock user state - normally fetched from API
-    const [user, setUser] = useState({
-        name: "Md Atiar Rahman Ovi",
-        email: "ovi@razibmarketing.net",
-        role: "ADMIN",
-        position: "Junior Manager",
-        department: "WEB",
-        points: 1350,
-        avatar: null, // URL or null
-        cover: null,  // URL or null
-    })
+    const fetchUser = async () => {
+        setIsLoading(true)
+        const data = await getCurrentUser()
+        if (data) {
+            setUser(data)
+        }
+        setIsLoading(false)
+    }
 
-    const handleFileUpload = (type: 'avatar' | 'cover') => {
-        // Mock upload functionality
-        alert(`Upload ${type} feature would open file picker here.`)
+    useEffect(() => {
+        fetchUser()
+    }, [])
+
+    const handleFileUpload = async (type: 'avatar' | 'cover') => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/*'
+        input.onchange = async (e: any) => {
+            const file = e.target.files[0]
+            if (file) {
+                const reader = new FileReader()
+                reader.onloadend = async () => {
+                    const base64String = reader.result as string
+                    const result = await updateUser(user.id, { [type]: base64String })
+                    if (result.success) {
+                        setUser(result.user)
+                        setShowSuccess(true)
+                        setTimeout(() => setShowSuccess(false), 3000)
+                    }
+                }
+                reader.readAsDataURL(file)
+            }
+        }
+        input.click()
+    }
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSaving(true)
+        const result = await updateUser(user.id, {
+            name: user.name,
+            position: user.position,
+            department: user.department
+        })
+        setIsSaving(false)
+        if (result.success) {
+            setShowSuccess(true)
+            setTimeout(() => setShowSuccess(false), 3000)
+        }
+    }
+
+    const handleSignOut = () => {
+        document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"
+        window.location.href = '/login'
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+        )
+    }
+
+    if (!user) {
+        return (
+            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <p className="text-slate-500">Could not load profile data.</p>
+                <button onClick={fetchUser} className="mt-4 text-blue-600 hover:underline">Try Again</button>
+            </div>
+        )
     }
 
     return (
-        <div className="p-8 space-y-8 max-w-5xl mx-auto">
+        <div className="p-8 space-y-8 max-w-5xl mx-auto relative">
+            <AnimatePresence>
+                {showSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-8 right-8 z-50 flex items-center gap-3 bg-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-emerald-500/20"
+                    >
+                        <CheckCircle2 className="w-6 h-6" />
+                        <div>
+                            <p className="font-bold">Profile Updated!</p>
+                            <p className="text-sm opacity-90 text-white/90">Your changes have been saved.</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <header className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">My Profile</h1>
-                <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <button onClick={handleSignOut} className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                     <LogOut className="w-4 h-4" /> Sign Out
                 </button>
             </header>
@@ -41,7 +119,9 @@ export default function ProfilePage() {
             >
                 {/* Cover Image */}
                 <div className="h-48 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative group">
-                    {user.cover && <img src={user.cover} alt="Cover" className="w-full h-full object-cover" />}
+                    {user.cover ? (
+                        <img src={user.cover} alt="Cover" className="w-full h-full object-cover" />
+                    ) : null}
 
                     <button
                         onClick={() => handleFileUpload('cover')}
@@ -61,7 +141,7 @@ export default function ProfilePage() {
                                 {user.avatar ? (
                                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    user.name.split(' ').map(n => n[0]).join('').substring(0, 2)
+                                    user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2)
                                 )}
                             </div>
                             <button
@@ -77,7 +157,7 @@ export default function ProfilePage() {
                         <div className="flex-1 pt-2">
                             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{user.name}</h2>
                             <p className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2">
-                                <Briefcase className="w-4 h-4" /> {user.position}
+                                <Briefcase className="w-4 h-4" /> {user.position || "Member"}
                             </p>
                         </div>
 
@@ -149,32 +229,53 @@ export default function ProfilePage() {
                         )}
 
                         {activeTab === 'settings' && (
-                            <div className="max-w-xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <form onSubmit={handleSaveProfile} className="max-w-xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Account Settings</h3>
 
                                 <div className="space-y-4">
                                     <div className="grid gap-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Display Name</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                defaultValue={user.name}
-                                                className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800">Save</button>
-                                        </div>
+                                        <input
+                                            type="text"
+                                            value={user.name}
+                                            onChange={(e) => setUser({ ...user, name: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Job Title</label>
                                         <input
                                             type="text"
-                                            defaultValue={user.position}
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500"
+                                            value={user.position || ''}
+                                            onChange={(e) => setUser({ ...user, position: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
+
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Department</label>
+                                        <select
+                                            value={user.department}
+                                            onChange={(e) => setUser({ ...user, department: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="WEB">WEB</option>
+                                            <option value="UI_UX">UI/UX</option>
+                                            <option value="SEO">SEO</option>
+                                            <option value="PAID_MEDIA">PAID MEDIA</option>
+                                        </select>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving}
+                                        className="px-6 py-2 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-lg text-sm font-bold disabled:opacity-50 hover:opacity-90 transition-opacity"
+                                    >
+                                        {isSaving ? "Saving..." : "Save Changes"}
+                                    </button>
                                 </div>
-                            </div>
+                            </form>
                         )}
 
                         {activeTab === 'notifications' && (
