@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateSystemSettings, getSystemSettings } from '@/app/actions/settings'
-import { getUsers, updateUser, deleteUser } from '@/app/actions/user'
+import { getUsers, updateUser, deleteUser, createUser } from '@/app/actions/user'
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('general')
@@ -23,29 +23,23 @@ export default function SettingsPage() {
     })
 
     const fetchUsers = async () => {
-        const data = await getUsers()
-        setUsers(data)
+        const usersData = await getUsers()
+        if (usersData) setUsers(usersData)
+    }
+
+    const fetchSettings = async () => {
+        const settingsData = await getSystemSettings()
+        if (settingsData) {
+            setSettings({
+                ...settingsData,
+                yearlyLeaveDates: settingsData.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
+            })
+        }
     }
 
     useEffect(() => {
-        const fetchData = async () => {
-            console.log("SettingsPage: Fetching data...");
-            const [settingsData, usersData] = await Promise.all([
-                getSystemSettings(),
-                getUsers()
-            ])
-            console.log("SettingsPage: Data fetched.", { settingsData, usersCount: usersData?.length });
-            if (settingsData) {
-                setSettings({
-                    ...settingsData,
-                    yearlyLeaveDates: settingsData.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
-                })
-            }
-            if (usersData) {
-                setUsers(usersData)
-            }
-        }
-        fetchData()
+        fetchSettings()
+        fetchUsers()
     }, [])
 
     const handleSave = async () => {
@@ -239,6 +233,14 @@ function GeneralSettings({ settings, updateField }: any) {
 function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => void }) {
     const [editingUser, setEditingUser] = useState<any>(null)
     const [isDeleting, setIsDeleting] = useState<string | null>(null)
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+    const [isInviting, setIsInviting] = useState(false)
+    const [inviteData, setInviteData] = useState({
+        name: '',
+        email: '',
+        role: 'SUBSCRIBER',
+        department: 'WEB'
+    })
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -265,11 +267,30 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
         }
     }
 
+    const handleInvite = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsInviting(true)
+        const result = await createUser(inviteData)
+        if (result.success) {
+            setIsInviteModalOpen(false)
+            setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB' })
+            onRefresh()
+        } else {
+            alert('Failed to invite member: ' + result.error)
+        }
+        setIsInviting(false)
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Team Members</h2>
-                <button className="text-sm bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-800 dark:hover:bg-white transition-colors">Invite Member</button>
+                <button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="text-sm bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-800 dark:hover:bg-white transition-colors"
+                >
+                    Invite Member
+                </button>
             </div>
 
             <div className="space-y-4">
@@ -282,11 +303,10 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                 ) : (
                     users.map((member, i) => (
                         <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                            {/* ... existing member row content ... */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
-                                        {member.name[0]}
+                                        {member.name?.[0] || '?'}
                                     </div>
                                     <div>
                                         <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
@@ -314,7 +334,7 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                                     </div>
                                 </div>
                             </div>
-
+                            {/* ... existing editing form ... */}
                             {editingUser?.id === member.id && (
                                 <motion.form
                                     initial={{ opacity: 0, height: 0 }}
@@ -388,6 +408,111 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                     ))
                 )}
             </div>
+
+            {/* Invite Modal */}
+            <AnimatePresence>
+                {isInviteModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsInviteModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Invite Team Member</h2>
+                                    <p className="text-slate-500 text-sm">Add a new member to your organization.</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsInviteModalOpen(false)}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleInvite} className="space-y-6">
+                                <div className="grid gap-2">
+                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Full Name</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        placeholder="John Doe"
+                                        value={inviteData.name}
+                                        onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Email Address</label>
+                                    <input
+                                        required
+                                        type="email"
+                                        placeholder="john@company.com"
+                                        value={inviteData.email}
+                                        onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</label>
+                                        <select
+                                            value={inviteData.role}
+                                            onChange={(e) => setInviteData({ ...inviteData, role: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        >
+                                            <option value="ADMIN">ADMIN</option>
+                                            <option value="EDITOR">EDITOR</option>
+                                            <option value="SUBSCRIBER">SUBSCRIBER</option>
+                                        </select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Department</label>
+                                        <select
+                                            value={inviteData.department}
+                                            onChange={(e) => setInviteData({ ...inviteData, department: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        >
+                                            <option value="WEB">WEB</option>
+                                            <option value="UI_UX">UI/UX</option>
+                                            <option value="SEO">SEO</option>
+                                            <option value="PAID_MEDIA">PAID MEDIA</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsInviteModalOpen(false)}
+                                        className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isInviting}
+                                        className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-70 flex items-center gap-2"
+                                    >
+                                        {isInviting ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Invite Member'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

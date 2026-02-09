@@ -52,3 +52,24 @@ export async function deleteUser(id: string) {
         return { success: false, error: "Failed to delete user" };
     }
 }
+
+export async function createUser(data: {
+    name: string;
+    email: string;
+    role: string;
+    department: string;
+}) {
+    try {
+        const user = await prisma.user.create({
+            data: {
+                ...data,
+                password: "scrypt-hash-placeholder", // Placeholder for now
+            },
+        });
+        revalidatePath("/dashboard/settings");
+        return { success: true, user: JSON.parse(JSON.stringify(user)) };
+    } catch (error) {
+        console.error("Failed to create user:", error);
+        return { success: false, error: "Failed to create user" };
+    }
+}
