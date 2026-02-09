@@ -105,9 +105,10 @@ export async function createUser(data: {
     }
 }
 
-export async function getActivities(limit: number = 5) {
+export async function getActivities(limit: number = 5, category?: string) {
     try {
         const activities = await prisma.activity.findMany({
+            where: category ? { category } : {},
             include: {
                 user: {
                     select: {

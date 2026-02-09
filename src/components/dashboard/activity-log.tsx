@@ -6,18 +6,18 @@ import { Clock, User as UserIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 
-export function ActivityLog({ limit = 5, className }: { limit?: number; className?: string }) {
+export function ActivityLog({ limit = 5, category, className }: { limit?: number; category?: string; className?: string }) {
     const [activities, setActivities] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const fetchActivities = async () => {
-            const data = await getActivities(limit)
+            const data = await getActivities(limit, category)
             setActivities(data)
             setIsLoading(false)
         }
         fetchActivities()
-    }, [limit])
+    }, [limit, category])
 
     if (isLoading) {
         return (

@@ -37,7 +37,8 @@ export async function createSOP(data: {
                 data: {
                     userId: data.userId,
                     action: `Created new SOP: ${data.title}`,
-                    points: 5
+                    points: 5,
+                    category: "UNIVERSITY"
                 }
             });
             await prisma.user.update({
@@ -72,7 +73,8 @@ export async function updateSOP(id: string, data: {
                 data: {
                     userId: data.userId,
                     action: `Updated SOP: ${sop.title}`,
-                    points: 2
+                    points: 2,
+                    category: "UNIVERSITY"
                 }
             });
         }

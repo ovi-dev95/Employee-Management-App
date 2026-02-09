@@ -45,7 +45,8 @@ export async function createIdea(data: {
             data: {
                 userId: data.submittedBy,
                 action: `Submitted a new idea: ${data.title}`,
-                points: 10
+                points: 10,
+                category: "PRODUCT_LAB"
             }
         });
 

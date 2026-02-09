@@ -45,7 +45,8 @@ export async function createRequest(data: {
             data: {
                 userId: data.submittedBy,
                 action: `Submitted a ${data.type} request: ${data.title}`,
-                points: 5
+                points: 5,
+                category: "REQUESTS"
             }
         });
 
