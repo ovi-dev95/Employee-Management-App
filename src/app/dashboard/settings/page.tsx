@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateSystemSettings, getSystemSettings } from '@/app/actions/settings'
+import { getUsers, updateUser, deleteUser } from '@/app/actions/user'
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('general')
     const [isLoading, setIsLoading] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
+    const [users, setUsers] = useState<any[]>([])
     const [settings, setSettings] = useState<any>({
         lookerStudioUrl: "",
         checkInTime: "12:00 PM",
@@ -20,17 +22,28 @@ export default function SettingsPage() {
         yearlyLeaveDates: "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
     })
 
+    const fetchUsers = async () => {
+        const data = await getUsers()
+        setUsers(data)
+    }
+
     useEffect(() => {
-        const fetchSettings = async () => {
-            const data = await getSystemSettings()
-            if (data) {
+        const fetchData = async () => {
+            const [settingsData, usersData] = await Promise.all([
+                getSystemSettings(),
+                getUsers()
+            ])
+            if (settingsData) {
                 setSettings({
-                    ...data,
-                    yearlyLeaveDates: data.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
+                    ...settingsData,
+                    yearlyLeaveDates: settingsData.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
                 })
             }
+            if (usersData) {
+                setUsers(usersData)
+            }
         }
-        fetchSettings()
+        fetchData()
     }, [])
 
     const handleSave = async () => {
@@ -119,7 +132,7 @@ export default function SettingsPage() {
                         transition={{ duration: 0.2 }}
                     >
                         {activeTab === 'general' && <GeneralSettings settings={settings} updateField={updateField} />}
-                        {activeTab === 'members' && <MembersSettings />}
+                        {activeTab === 'members' && <MembersSettings users={users} onRefresh={fetchUsers} />}
                         {activeTab === 'security' && <SecuritySettings />}
                         {activeTab === 'notifications' && <NotificationSettings />}
                         {activeTab === 'billing' && <BillingSettings />}
@@ -221,33 +234,146 @@ function GeneralSettings({ settings, updateField }: any) {
     )
 }
 
-function MembersSettings() {
+function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => void }) {
+    const [editingUser, setEditingUser] = useState<any>(null)
+    const [isDeleting, setIsDeleting] = useState<string | null>(null)
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const result = await updateUser(editingUser.id, {
+            name: editingUser.name,
+            email: editingUser.email,
+            role: editingUser.role,
+            department: editingUser.department
+        })
+        if (result.success) {
+            setEditingUser(null)
+            onRefresh()
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to remove this team member?')) {
+            setIsDeleting(id)
+            const result = await deleteUser(id)
+            if (result.success) {
+                onRefresh()
+            }
+            setIsDeleting(null)
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Team Members</h2>
-                <button className="text-sm bg-slate-900 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800">Invite Member</button>
+                <button className="text-sm bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-800 dark:hover:bg-white transition-colors">Invite Member</button>
             </div>
 
             <div className="space-y-4">
-                {[
-                    { name: 'Admn Ovi', email: 'ovi@razibmarketing.net', role: 'Admin' },
-                    { name: 'Team Lead', email: 'lead@nexus.com', role: 'Editor' },
-                    { name: 'Team Member', email: 'member@nexus.com', role: 'Viewer' }
-                ].map((member, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-colors group">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
-                                {member.name[0]}
+                {users.map((member, i) => (
+                    <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+                                    {member.name[0]}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
+                                    <p className="text-xs text-slate-500">{member.email}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
-                                <p className="text-xs text-slate-500">{member.email}</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                                    {member.role}
+                                </span>
+                                <div className="flex items-center gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => setEditingUser(member)}
+                                        className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
+                                    >
+                                        <TerminalSquare className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(member.id)}
+                                        disabled={isDeleting === member.id}
+                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                            {member.role}
-                        </span>
+
+                        {editingUser?.id === member.id && (
+                            <motion.form
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-4"
+                                onSubmit={handleUpdate}
+                            >
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
+                                        <input
+                                            type="text"
+                                            value={editingUser.name}
+                                            onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
+                                        <input
+                                            type="email"
+                                            value={editingUser.email}
+                                            onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</label>
+                                        <select
+                                            value={editingUser.role}
+                                            onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="ADMIN">ADMIN</option>
+                                            <option value="EDITOR">EDITOR</option>
+                                            <option value="SUBSCRIBER">SUBSCRIBER</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Department</label>
+                                        <select
+                                            value={editingUser.department}
+                                            onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
+                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="WEB">WEB</option>
+                                            <option value="UI_UX">UI/UX</option>
+                                            <option value="SEO">SEO</option>
+                                            <option value="PAID_MEDIA">PAID MEDIA</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingUser(null)}
+                                        className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
+                                    >
+                                        Save Member
+                                    </button>
+                                </div>
+                            </motion.form>
+                        )}
                     </div>
                 ))}
             </div>

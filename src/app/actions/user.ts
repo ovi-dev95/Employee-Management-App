@@ -1,0 +1,51 @@
+"use server"
+
+import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
+
+export async function getUsers() {
+    try {
+        const users = await prisma.user.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+        return users;
+    } catch (error) {
+        console.error("Failed to fetch users:", error);
+        return [];
+    }
+}
+
+export async function updateUser(id: string, data: {
+    name?: string;
+    email?: string;
+    role?: string;
+    department?: string;
+}) {
+    try {
+        const user = await prisma.user.update({
+            where: { id },
+            data,
+        });
+        revalidatePath("/dashboard/settings");
+        return { success: true, user };
+    } catch (error) {
+        console.error("Failed to update user:", error);
+        return { success: false, error: "Failed to update user" };
+    }
+}
+
+export async function deleteUser(id: string) {
+    try {
+        // In a real app, you might want to check permissions or dependencies
+        await prisma.user.delete({
+            where: { id },
+        });
+        revalidatePath("/dashboard/settings");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete user:", error);
+        return { success: false, error: "Failed to delete user" };
+    }
+}
