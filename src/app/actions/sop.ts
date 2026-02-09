@@ -22,6 +22,7 @@ export async function createSOP(data: {
     category: string;
     videoUrl?: string;
     content: string;
+    userId?: string; // Optional for logging
 }) {
     try {
         const sop = await prisma.sOP.create({
@@ -30,11 +31,71 @@ export async function createSOP(data: {
                 views: 0
             }
         });
+
+        if (data.userId) {
+            await prisma.activity.create({
+                data: {
+                    userId: data.userId,
+                    action: `Created new SOP: ${data.title}`,
+                    points: 5
+                }
+            });
+            await prisma.user.update({
+                where: { id: data.userId },
+                data: { points: { increment: 5 } }
+            });
+        }
+
         revalidatePath("/dashboard/university");
         return { success: true, sop: JSON.parse(JSON.stringify(sop)) };
     } catch (error) {
         console.error("Failed to create SOP:", error);
         return { success: false, error: "Failed to create SOP" };
+    }
+}
+
+export async function updateSOP(id: string, data: {
+    title?: string;
+    category?: string;
+    videoUrl?: string;
+    content?: string;
+    userId?: string;
+}) {
+    try {
+        const sop = await prisma.sOP.update({
+            where: { id },
+            data
+        });
+
+        if (data.userId) {
+            await prisma.activity.create({
+                data: {
+                    userId: data.userId,
+                    action: `Updated SOP: ${sop.title}`,
+                    points: 2
+                }
+            });
+        }
+
+        revalidatePath("/dashboard/university");
+        return { success: true, sop: JSON.parse(JSON.stringify(sop)) };
+    } catch (error) {
+        console.error("Failed to update SOP:", error);
+        return { success: false, error: "Failed to update SOP" };
+    }
+}
+
+export async function incrementSOPViews(id: string) {
+    try {
+        await prisma.sOP.update({
+            where: { id },
+            data: { views: { increment: 1 } }
+        });
+        revalidatePath("/dashboard/university");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to increment views:", error);
+        return { success: false };
     }
 }
 

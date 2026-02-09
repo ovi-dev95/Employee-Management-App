@@ -1,12 +1,15 @@
 "use client"
 
-import { useState } from 'react'
-import { ThumbsUp, MessageSquare, Plus, Rocket, Eye } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ThumbsUp, MessageSquare, Plus, Rocket, Eye, Trash2, Clock } from 'lucide-react'
+import { ActivityLog } from '@/components/dashboard/activity-log'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { cn } from '@/lib/utils'
+import { getIdeas, createIdea, updateIdea, deleteIdea, toggleVote } from '@/app/actions/idea'
+import { getCurrentUser } from '@/app/actions/user'
 
 const ideaSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -21,39 +24,72 @@ interface Idea {
     description: string
     status: 'REVIEW' | 'APPROVED' | 'BUILDING' | 'REJECTED'
     upvotes: number
-    author: string
+    submittedBy: string
+    user?: {
+        name: string
+        avatar?: string
+    }
+    votes?: { userId: string }[]
 }
 
-const mockIdeas: Idea[] = [
-    { id: '1', title: 'Automated Daily Reports', description: 'We should automate the daily SEO report generation using Python script.', status: 'BUILDING', upvotes: 12, author: 'Team Lead' },
-    { id: '2', title: 'Internal Wiki Search', description: 'Add Algolia search to find SOPs faster.', status: 'REVIEW', upvotes: 8, author: 'Dev Team' },
-    { id: '3', title: 'Employee Perks Dashboard', description: 'A page to see our benefits and remaining PTO.', status: 'APPROVED', upvotes: 25, author: 'HR' },
-]
-
 export default function ProductLabPage() {
-    const [ideas, setIdeas] = useState<Idea[]>(mockIdeas)
+    const [ideas, setIdeas] = useState<any[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [currentUser, setCurrentUser] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
     const { register, handleSubmit, reset, formState: { errors } } = useForm<IdeaFormData>({
         resolver: zodResolver(ideaSchema),
     })
 
-    const onSubmit = (data: IdeaFormData) => {
-        const newIdea = {
-            id: Math.random().toString(36).substr(2, 9),
-            ...data,
-            status: 'REVIEW' as const,
-            upvotes: 0,
-            author: 'Me',
-        }
-        setIdeas([newIdea, ...ideas])
-        setIsModalOpen(false)
-        reset()
+    const fetchData = async () => {
+        setIsLoading(true)
+        const [ideasData, userData] = await Promise.all([
+            getIdeas(),
+            getCurrentUser()
+        ])
+        setIdeas(ideasData)
+        setCurrentUser(userData)
+        setIsLoading(false)
     }
 
-    const handleUpvote = (id: string) => {
-        setIdeas(ideas.map(idea =>
-            idea.id === id ? { ...idea, upvotes: idea.upvotes + 1 } : idea
-        ))
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    const onSubmit = async (data: IdeaFormData) => {
+        if (!currentUser) {
+            alert("You must be logged in to submit an idea")
+            return
+        }
+        const result = await createIdea({
+            ...data,
+            submittedBy: currentUser.id
+        })
+        if (result.success) {
+            fetchData()
+            setIsModalOpen(false)
+            reset()
+        } else {
+            alert("Failed to submit idea: " + result.error)
+        }
+    }
+
+    const handleUpvote = async (ideaId: string) => {
+        if (!currentUser) return
+        const result = await toggleVote(ideaId, currentUser.id)
+        if (result.success) {
+            fetchData()
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to delete this idea?')) {
+            const result = await deleteIdea(id)
+            if (result.success) {
+                fetchData()
+            }
+        }
     }
 
     return (
@@ -73,40 +109,79 @@ export default function ProductLabPage() {
                 </button>
             </header>
 
-            {/* Kanban-ish / List Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ideas.map((idea) => (
-                    <motion.div
-                        key={idea.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-56 group hover:border-purple-500/30 transition-colors"
-                    >
-                        <div>
-                            <div className="flex justify-between items-start mb-3">
-                                <StatusBadge status={idea.status} />
-                                <span className="text-xs text-slate-400">by {idea.author}</span>
-                            </div>
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2">{idea.title}</h3>
-                            <p className="text-sm text-slate-500 line-clamp-3">{idea.description}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-min">
+                    {isLoading ? (
+                        Array(3).fill(0).map((_, i) => (
+                            <div key={i} className="h-56 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />
+                        ))
+                    ) : ideas.length === 0 ? (
+                        <div className="col-span-full text-center py-20 bg-slate-50 dark:bg-slate-900 border border-dashed rounded-3xl h-64 flex flex-col items-center justify-center">
+                            <Rocket className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500 font-medium">No ideas yet. Be the first to pitch!</p>
                         </div>
-
-                        <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
-                            <button
-                                onClick={() => handleUpvote(idea.id)}
-                                className="flex items-center gap-2 text-slate-500 hover:text-purple-600 transition-colors group/btn"
+                    ) : (
+                        ideas.map((idea) => (
+                            <motion.div
+                                key={idea.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-56 group hover:border-purple-500/30 transition-colors relative"
                             >
-                                <ThumbsUp className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                                <span className="font-medium">{idea.upvotes}</span>
-                            </button>
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <MessageSquare className="w-4 h-4" />
-                                <span className="text-xs">0</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+                                <div>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <StatusBadge status={idea.status} />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-400">by {idea.user?.name || 'Anonymous'}</span>
+                                            {currentUser?.id === idea.submittedBy && (
+                                                <button
+                                                    onClick={() => handleDelete(idea.id)}
+                                                    className="p-1.5 hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-2">{idea.title}</h3>
+                                    <p className="text-sm text-slate-500 line-clamp-3">{idea.description}</p>
+                                </div>
+
+                                <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+                                    <button
+                                        onClick={() => handleUpvote(idea.id)}
+                                        className={cn(
+                                            "flex items-center gap-2 transition-colors group/btn",
+                                            idea.votes?.some((v: any) => v.userId === currentUser?.id)
+                                                ? "text-purple-600"
+                                                : "text-slate-500 hover:text-purple-600"
+                                        )}
+                                    >
+                                        <ThumbsUp className={cn(
+                                            "w-4 h-4 group-hover/btn:scale-110 transition-transform",
+                                            idea.votes?.some((v: any) => v.userId === currentUser?.id) && "fill-current"
+                                        )} />
+                                        <span className="font-medium">{idea.upvotes}</span>
+                                    </button>
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        <MessageSquare className="w-4 h-4" />
+                                        <span className="text-xs">0</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))
+                    )}
+                </div>
+
+                <aside className="space-y-6">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-purple-500" /> Idea History
+                        </h3>
+                        <ActivityLog limit={6} />
+                    </div>
+                </aside>
             </div>
 
             {/* Simple Modal */}

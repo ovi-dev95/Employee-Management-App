@@ -104,3 +104,26 @@ export async function createUser(data: {
         return { success: false, error: error instanceof Error ? error.message : "Failed to create user" };
     }
 }
+
+export async function getActivities(limit: number = 5) {
+    try {
+        const activities = await prisma.activity.findMany({
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        avatar: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            },
+            take: limit
+        });
+        return JSON.parse(JSON.stringify(activities));
+    } catch (error) {
+        console.error("Failed to fetch activities:", error);
+        return [];
+    }
+}
