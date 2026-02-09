@@ -20,7 +20,7 @@ export default function LoginPage() {
         setTimeout(() => {
             // Set a mock auth cookie
             document.cookie = "auth=true; path=/;"
-            router.push('/dashboard')
+            window.location.href = '/dashboard'
         }, 1000)
     }
 

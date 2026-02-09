@@ -5,11 +5,13 @@ import { revalidatePath } from "next/cache"
 
 export async function getUsers() {
     try {
+        console.log("Fetching users from database...");
         const users = await prisma.user.findMany({
             orderBy: {
                 createdAt: 'desc'
             }
         });
+        console.log(`Successfully fetched ${users.length} users.`);
         return users;
     } catch (error) {
         console.error("Failed to fetch users:", error);

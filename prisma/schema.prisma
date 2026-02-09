@@ -1,146 +1,133 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String   // In a real app, hash this
-  role      String   @default("SUBSCRIBER") // Role: ADMIN, EDITOR, SUBSCRIBER
-  department String  @default("WEB") // Department: WEB, UI_UX, SEO, PAID_MEDIA
-  
-  points    Int      @default(0)
-  
-  // User specific settings
-  emailNotifications Boolean  @default(true)
-  pushNotifications  Boolean  @default(true)
-  twoFactorEnabled   Boolean  @default(false)
-  
-  attendance Attendance[]
-  requests   Request[]
-  ideas      Idea[]
-  votes      Vote[]
-  meetings   Meeting[] @relation("Host")
-  booked     Meeting[] @relation("Attendee")
-  activities Activity[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String       @id @default(uuid())
+  name               String
+  email              String       @unique
+  password           String
+  role               String       @default("SUBSCRIBER")
+  department         String       @default("WEB")
+  points             Int          @default(0)
+  emailNotifications Boolean      @default(true)
+  pushNotifications  Boolean      @default(true)
+  twoFactorEnabled   Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  activities         Activity[]
+  attendance         Attendance[]
+  ideas              Idea[]
+  booked             Meeting[]    @relation("Attendee")
+  meetings           Meeting[]    @relation("Host")
+  requests           Request[]
+  votes              Vote[]
 }
 
 model SystemSettings {
-  id                String   @id @default("global")
-  lookerStudioUrl   String?
-  checkInTime       String   @default("12:00 PM")
-  checkOutTime      String   @default("08:00 PM")
-  
-  // Leave Settings
-  sickLeaveDays     Int      @default(10)
-  paidLeaveDays     Int      @default(15)
-  yearlyLeaveDays   Int      @default(20)
-  yearlyLeaveDates  String?  // JSON string or comma-separated dates
-  
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default("global")
+  lookerStudioUrl  String?
+  checkInTime      String   @default("12:00 PM")
+  checkOutTime     String   @default("08:00 PM")
+  sickLeaveDays    Int      @default(10)
+  paidLeaveDays    Int      @default(15)
+  yearlyLeaveDays  Int      @default(20)
+  yearlyLeaveDates String?
+  updatedAt        DateTime @updatedAt
 }
 
 model Attendance {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  date      DateTime @default(now()) // Only track the date part effectively
-  checkIn   DateTime @default(now())
+  date      DateTime  @default(now())
+  checkIn   DateTime  @default(now())
   checkOut  DateTime?
-  duration  Int?     // Duration in minutes
-  
+  duration  Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Request {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  type        String
+  status      String   @default("PENDING")
+  priority    String   @default("MEDIUM")
+  submittedBy String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [submittedBy], references: [id])
+}
+
+model SOP {
+  id        String   @id @default(uuid())
+  title     String
+  category  String
+  videoUrl  String?
+  content   String
+  views     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Request {
-  id          String      @id @default(uuid())
-  title       String
-  description String
-  type        String      // RequestType: BUG, DESIGN, CONTENT
-  status      String      @default("PENDING") // RequestStatus
-  priority    String      @default("MEDIUM") // Priority
-  
-  submittedBy String
-  user        User        @relation(fields: [submittedBy], references: [id])
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-model SOP {
+model Idea {
   id          String   @id @default(uuid())
   title       String
-  category    String   // SOPCategory: WEB_DEV, SEO, PAID_MEDIA, GENERAL
-  videoUrl    String?
-  content     String   // The checklist content or markdown
-  views       Int      @default(0)
-  
+  description String
+  status      String   @default("REVIEW")
+  upvotes     Int      @default(0)
+  submittedBy String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-model Idea {
-  id          String     @id @default(uuid())
-  title       String
-  description String
-  status      String     @default("REVIEW") // IdeaStatus
-  upvotes     Int        @default(0)
-  
-  submittedBy String
-  user        User       @relation(fields: [submittedBy], references: [id])
+  user        User     @relation(fields: [submittedBy], references: [id])
   votes       Vote[]
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
 }
 
 model Vote {
   id     String @id @default(uuid())
   userId String
   ideaId String
-  user   User   @relation(fields: [userId], references: [id])
   idea   Idea   @relation(fields: [ideaId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, ideaId])
 }
 
 model Meeting {
-  id          String      @id @default(uuid())
-  title       String
-  type        String      // MeetingType
-  startTime   DateTime
-  endTime     DateTime
-  notes       String?
-  
-  hostId      String
-  host        User        @relation("Host", fields: [hostId], references: [id])
-  
-  attendeeId  String?
-  attendee    User?       @relation("Attendee", fields: [attendeeId], references: [id])
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String   @id @default(uuid())
+  title      String
+  type       String
+  startTime  DateTime
+  endTime    DateTime
+  notes      String?
+  hostId     String
+  attendeeId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  attendee   User?    @relation("Attendee", fields: [attendeeId], references: [id])
+  host       User     @relation("Host", fields: [hostId], references: [id])
 }
 
 model Activity {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  action    String   // e.g., "SUBMIT_REQUEST", "READ_SOP", "BOOK_MEETING", "VOTE_IDEA"
+  action    String
   points    Int
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model RM_Employee_Management_Tool {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("RM Employee Management Tool")
 }

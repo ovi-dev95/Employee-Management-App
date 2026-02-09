@@ -29,10 +29,12 @@ export default function SettingsPage() {
 
     useEffect(() => {
         const fetchData = async () => {
+            console.log("SettingsPage: Fetching data...");
             const [settingsData, usersData] = await Promise.all([
                 getSystemSettings(),
                 getUsers()
             ])
+            console.log("SettingsPage: Data fetched.", { settingsData, usersCount: usersData?.length });
             if (settingsData) {
                 setSettings({
                     ...settingsData,
