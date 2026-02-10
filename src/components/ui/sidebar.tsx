@@ -1,5 +1,4 @@
-import Image from 'next/image'
-
+import { ModeToggle } from '@/components/mode-toggle'
 // ... existing imports
 
 export function Sidebar() {
@@ -44,10 +43,6 @@ export function Sidebar() {
                     )
                 })}
             </nav>
-
-            import {ModeToggle} from '@/components/mode-toggle'
-
-            // ...
 
             <div className="p-4 border-t border-slate-800 space-y-2">
                 <Link
