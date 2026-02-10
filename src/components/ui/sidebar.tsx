@@ -1,38 +1,22 @@
-"use client"
+import Image from 'next/image'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import {
-    LayoutDashboard,
-    PlusCircle,
-    BookOpen,
-    Lightbulb,
-    Calendar,
-    Settings,
-    User,
-    LogOut,
-    ClipboardCheck,
-    BarChart3
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { logout } from '@/app/actions/auth'
-
-const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Attendance & Leave', href: '/dashboard/attendance', icon: ClipboardCheck },
-    { name: 'Submit Request', href: '/dashboard/requests', icon: PlusCircle },
-    { name: 'University', href: '/dashboard/university', icon: BookOpen },
-    { name: 'Product Lab', href: '/dashboard/product-lab', icon: Lightbulb },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-]
+// ... existing imports
 
 export function Sidebar() {
     const pathname = usePathname()
 
     return (
         <div className="flex flex-col h-full bg-slate-900 text-white w-64 border-r border-slate-800">
-            <div className="p-6 border-b border-slate-800">
+            <div className="p-6 border-b border-slate-800 flex flex-col items-center text-center">
+                <div className="relative w-16 h-16 mb-3">
+                    <Image
+                        src="/logo.png"
+                        alt="Nexus Logo"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
+                </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                     RM Employee
                 </h1>

@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "RM Employee Tool | Razib Marketing",
   description: "Internal Employee Management System for Razib Marketing.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({
