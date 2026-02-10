@@ -1,5 +1,30 @@
 import { ModeToggle } from '@/components/mode-toggle'
-// ... existing imports
+import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import {
+    LayoutDashboard,
+    ClipboardList,
+    BookOpen,
+    Lightbulb,
+    BarChart3,
+    Settings,
+    User,
+    LogOut,
+    PlusCircle
+} from 'lucide-react'
+import { logout } from '@/app/actions/auth'
+
+const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Attendance & Leave', href: '/dashboard/attendance', icon: ClipboardList },
+    { name: 'Submit Request', href: '/dashboard/requests/new', icon: PlusCircle },
+    { name: 'University', href: '/dashboard/university', icon: BookOpen },
+    { name: 'Product Lab', href: '/dashboard/product-lab', icon: Lightbulb },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+]
 
 export function Sidebar() {
     const pathname = usePathname()

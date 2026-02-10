@@ -18,9 +18,6 @@ export default async function DashboardPage() {
     const checkInTime = todaysRecord ? todaysRecord.checkIn : null
 
     return (
-
-
-    return (
         <div className="p-8 space-y-8 h-full">
             <header className="flex justify-between items-center animate-fade-in-up">
                 <div>
