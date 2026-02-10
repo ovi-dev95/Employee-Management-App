@@ -6,6 +6,7 @@ import { ActivityLog } from '@/components/dashboard/activity-log'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { getSOPs, createSOP, deleteSOP, updateSOP, incrementSOPViews } from '@/app/actions/sop'
+import { getCurrentUser } from '@/app/actions/user'
 
 const categories = ['ALL', 'WEB_DEV', 'SEO', 'PAID_MEDIA', 'GENERAL']
 
@@ -24,10 +25,16 @@ export default function UniversityPage() {
     const [editingSop, setEditingSop] = useState<any>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
+    const [currentUser, setCurrentUser] = useState<any>(null)
+
     const fetchSops = async () => {
         try {
-            const data = await getSOPs()
+            const [data, userData] = await Promise.all([
+                getSOPs(),
+                getCurrentUser()
+            ])
             setSops(data)
+            setCurrentUser(userData)
         } catch (error) {
             console.error("fetchSops error:", error)
         }
@@ -39,9 +46,12 @@ export default function UniversityPage() {
 
     const handleAddSop = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (!currentUser) {
+            alert("You must be logged in to add an SOP")
+            return
+        }
         setIsSubmitting(true)
-        // For now using a hardcoded userId for activity logging
-        const result = await createSOP({ ...newSop, userId: 'admin-id-placeholder' })
+        const result = await createSOP({ ...newSop, userId: currentUser.id })
         if (result.success) {
             setIsAddModalOpen(false)
             setNewSop({ title: '', category: 'GENERAL', videoUrl: '', content: '' })
@@ -54,14 +64,14 @@ export default function UniversityPage() {
 
     const handleEditSop = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!editingSop) return
+        if (!editingSop || !currentUser) return
         setIsSubmitting(true)
         const result = await updateSOP(editingSop.id, {
             title: editingSop.title,
             category: editingSop.category,
             videoUrl: editingSop.videoUrl,
             content: editingSop.content,
-            userId: 'admin-id-placeholder'
+            userId: currentUser.id
         })
         if (result.success) {
             setIsEditModalOpen(false)
