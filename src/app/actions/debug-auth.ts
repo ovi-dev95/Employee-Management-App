@@ -20,7 +20,14 @@ export async function debugLogin(formData: FormData) {
                 success: false,
                 step: "User Lookup",
                 message: `User with email '${email}' NOT FOUND in database.`,
-                details: { email }
+                details: {
+                    email,
+                    env: {
+                        NODE_ENV: process.env.NODE_ENV,
+                        HAS_DB_URL: !!process.env.DATABASE_URL,
+                        DB_URL_PREFIX: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 15) + "..." : "UNDEFINED"
+                    }
+                }
             }
         }
 
@@ -73,7 +80,14 @@ export async function debugLogin(formData: FormData) {
             success: false,
             step: "System Error",
             message: "An unexpected error occurred during debug.",
-            details: { error: (error as Error).message }
+            details: {
+                error: (error as Error).message,
+                env: {
+                    NODE_ENV: process.env.NODE_ENV,
+                    HAS_DB_URL: !!process.env.DATABASE_URL,
+                    DB_URL_PREFIX: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 15) + "..." : "UNDEFINED"
+                }
+            }
         }
     }
 }
