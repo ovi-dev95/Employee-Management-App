@@ -15,6 +15,7 @@ import {
     BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logout } from '@/app/actions/auth'
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -74,10 +75,7 @@ export function Sidebar() {
                     <span className="font-medium">My Profile</span>
                 </Link>
                 <button
-                    onClick={() => {
-                        document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"
-                        window.location.href = '/login'
-                    }}
+                    onClick={() => logout()}
                     className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
                 >
                     <LogOut className="w-5 h-5" />
