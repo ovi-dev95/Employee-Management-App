@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight, Lock } from "lucide-react"
 import { ModeToggle } from "@/components/mode-toggle"
@@ -20,10 +21,15 @@ export default function Home() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/20 rotate-3 hovering"
-        >
-          <span className="text-4xl font-bold text-white">N</span>
-        </motion.div>
+          <div className="relative w-24 h-24 mx-auto mb-6">
+          <Image
+            src="/logo.png"
+            alt="Nexus Logo"
+            fill
+            className="object-contain drop-shadow-2xl"
+            priority
+          />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

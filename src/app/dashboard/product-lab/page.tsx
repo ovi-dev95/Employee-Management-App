@@ -127,7 +127,7 @@ export default function ProductLabPage() {
                                 layout
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-56 group hover:border-purple-500/30 transition-colors relative"
+                                className="glass-card p-6 rounded-2xl flex flex-col justify-between h-56 group hover:scale-[1.02] transition-all relative"
                             >
                                 <div>
                                     <div className="flex justify-between items-start mb-3">
@@ -225,7 +225,7 @@ function StatusBadge({ status }: { status: Idea['status'] }) {
     }
 
     return (
-        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider", styles[status])}>
+        <span className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider shadow-sm", styles[status])}>
             {status}
         </span>
     )

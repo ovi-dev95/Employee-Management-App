@@ -1,42 +1,36 @@
-"use client"
-
-import { useState, useEffect } from 'react'
 import { Users, Clock, AlertCircle, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AttendanceWidget } from '@/components/dashboard/attendance-widget'
 import { LookerEmbed } from '@/components/dashboard/looker-embed'
 import { getDashboardStats } from '@/app/actions/dashboard'
+import { getMyAttendance } from '@/app/actions/attendance'
 
-export default function DashboardPage() {
-    const [stats, setStats] = useState({
-        totalEmployees: "0",
-        activeToday: "0",
-        pendingRequests: "0",
-        totalIdeas: "0"
-    })
+export const dynamic = 'force-dynamic'
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            const data = await getDashboardStats()
-            setStats(data)
-        }
-        fetchStats()
-    }, [])
+export default async function DashboardPage() {
+    const stats = await getDashboardStats()
+    const myAttendance = await getMyAttendance()
+
+    // Determine today's attendance status
+    const today = new Date().toDateString()
+    const todaysRecord = myAttendance.find((a: any) => new Date(a.date).toDateString() === today)
+    const isCheckedIn = !!todaysRecord && !todaysRecord.checkOut
+    const checkInTime = todaysRecord ? todaysRecord.checkIn : null
 
     return (
-        <div className="p-8 space-y-8 h-full bg-slate-50 dark:bg-slate-950">
-            <header className="flex justify-between items-center">
+        <div className="p-8 space-y-8 h-full">
+            <header className="flex justify-between items-center animate-fade-in-up">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">The Pulse</h1>
+                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">The Pulse</h1>
                     <p className="text-slate-500 dark:text-slate-400">Live Analytics & Team Performance</p>
                 </div>
-                <div className="text-sm text-slate-500 bg-white dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
-                    Updated: Just now
+                <div className="text-sm text-slate-500 bg-white/50 dark:bg-slate-900/50 backdrop-blur px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                    Updated: {new Date().toLocaleTimeString()}
                 </div>
             </header>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                 <StatCard
                     title="Total Employees"
                     value={stats.totalEmployees}
@@ -44,6 +38,7 @@ export default function DashboardPage() {
                     trend="up"
                     icon={Users}
                     color="text-blue-600"
+                    gradient="from-blue-500/10 to-blue-500/5"
                 />
                 <StatCard
                     title="Active Today"
@@ -51,15 +46,17 @@ export default function DashboardPage() {
                     change="Punched In"
                     trend="up"
                     icon={Clock}
-                    color="text-green-600"
+                    color="text-emerald-600"
+                    gradient="from-emerald-500/10 to-emerald-500/5"
                 />
                 <StatCard
                     title="Pending Requests"
                     value={stats.pendingRequests}
                     change="Action Req."
-                    trend="neutral"
+                    trend={parseInt(stats.pendingRequests) > 0 ? "down" : "neutral"}
                     icon={AlertCircle}
                     color="text-amber-600"
+                    gradient="from-amber-500/10 to-amber-500/5"
                 />
                 <StatCard
                     title="Total Ideas"
@@ -68,22 +65,24 @@ export default function DashboardPage() {
                     trend="up"
                     icon={Lightbulb}
                     color="text-purple-600"
+                    gradient="from-purple-500/10 to-purple-500/5"
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <LookerEmbed
-                    title="Performance Overview"
-                    className="lg:col-span-2"
-                    height="400px"
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden p-1">
+                    <LookerEmbed
+                        title="Performance Overview"
+                        height="400px"
+                    />
+                </div>
 
                 <div className="space-y-6">
                     {/* Attendance Widget */}
-                    <AttendanceWidget />
+                    <AttendanceWidget isCheckedIn={isCheckedIn} checkInTime={checkInTime} />
 
                     {/* Announcements / Recent Activity */}
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col">
+                    <div className="glass-card rounded-2xl p-6 flex flex-col">
                         <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Announcements</h3>
                         <div className="space-y-4 flex-1 overflow-y-auto">
                             <Announcement
@@ -118,15 +117,15 @@ export default function DashboardPage() {
     )
 }
 
-function StatCard({ title, value, change, trend, icon: Icon, color }: any) {
+function StatCard({ title, value, change, trend, icon: Icon, color, gradient }: any) {
     return (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <div className={cn("glass-card p-6 rounded-2xl hover:scale-[1.02] transition-transform", gradient && `bg-gradient-to-br ${gradient}`)}>
             <div className="flex items-center justify-between mb-4">
-                <div className={cn("p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg", color)}>
+                <div className={cn("p-2 bg-white/50 dark:bg-slate-800/50 rounded-lg backdrop-blur-sm", color)}>
                     <Icon className="w-6 h-6" />
                 </div>
                 <div className={cn(
-                    "px-2.5 py-0.5 rounded-full text-xs font-medium",
+                    "px-2.5 py-0.5 rounded-full text-xs font-medium border border-transparent",
                     trend === 'up' && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
                     trend === 'down' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
                     trend === 'neutral' && "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"

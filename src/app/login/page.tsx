@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Lock, Mail } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ModeToggle } from '@/components/mode-toggle'
@@ -39,8 +40,14 @@ export default function LoginPage() {
                 className="w-full max-w-md bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 p-8 z-10"
             >
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mx-auto flex items-center justify-center text-white mb-4 shadow-lg shadow-blue-500/30 transform rotate-3">
-                        <Lock className="w-8 h-8" />
+                    <div className="relative w-20 h-20 mx-auto mb-6">
+                        <Image
+                            src="/logo.png"
+                            alt="Nexus Logo"
+                            fill
+                            className="object-contain drop-shadow-2xl"
+                            priority
+                        />
                     </div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
                         Welcome Back

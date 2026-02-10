@@ -1,25 +1,38 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Clock, LogIn, LogOut, Coffee } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { LogIn, LogOut, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { checkIn, checkOut } from '@/app/actions/attendance'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
-export function AttendanceWidget() {
-    const [status, setStatus] = useState<'out' | 'in' | 'break'>('out')
-    const [checkInTime, setCheckInTime] = useState<Date | null>(null)
+interface AttendanceWidgetProps {
+    isCheckedIn: boolean
+    checkInTime: string | null // ISO string
+}
+
+export function AttendanceWidget({ isCheckedIn: initialStatus, checkInTime: initialTime }: AttendanceWidgetProps) {
+    const [isCheckedIn, setIsCheckedIn] = useState(initialStatus)
+    const [checkInTime, setCheckInTime] = useState<Date | null>(initialTime ? new Date(initialTime) : null)
     const [elapsed, setElapsed] = useState(0)
+    const [loading, setLoading] = useState(false)
+    const router = useRouter()
 
     useEffect(() => {
         let interval: NodeJS.Timeout
-        if (status === 'in' && checkInTime) {
+        if (isCheckedIn && checkInTime) {
+            // Update elapsed time immediately to avoid 1s delay
+            setElapsed(Math.floor((new Date().getTime() - checkInTime.getTime()) / 1000))
+
             interval = setInterval(() => {
                 setElapsed(Math.floor((new Date().getTime() - checkInTime.getTime()) / 1000))
             }, 1000)
+        } else {
+            setElapsed(0)
         }
         return () => clearInterval(interval)
-    }, [status, checkInTime])
+    }, [isCheckedIn, checkInTime])
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600)
@@ -28,52 +41,81 @@ export function AttendanceWidget() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
     }
 
-    const handleAction = (newStatus: 'in' | 'out' | 'break') => {
-        if (newStatus === 'in') {
-            setCheckInTime(new Date())
-        } else if (newStatus === 'out') {
-            setCheckInTime(null)
-            setElapsed(0)
+    const handleCheckIn = async () => {
+        setLoading(true)
+        try {
+            const res = await checkIn()
+            if (res.error) {
+                toast.error(res.error)
+            } else {
+                toast.success("Checked in successfully!")
+                setIsCheckedIn(true)
+                setCheckInTime(new Date())
+                router.refresh()
+            }
+        } catch (error) {
+            toast.error("Failed to check in")
+        } finally {
+            setLoading(false)
         }
-        setStatus(newStatus)
+    }
+
+    const handleCheckOut = async () => {
+        setLoading(true)
+        try {
+            const res = await checkOut()
+            if (res.error) {
+                toast.error(res.error)
+            } else {
+                toast.success("Checked out successfully!")
+                setIsCheckedIn(false)
+                setCheckInTime(null)
+                router.refresh()
+            }
+        } catch (error) {
+            toast.error("Failed to check out")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center justify-center space-y-4">
+        <div className="glass-card rounded-2xl p-6 flex flex-col items-center justify-center space-y-4">
             <div className="flex flex-col items-center">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Attendance</h3>
                 <p className="text-sm text-slate-500">{format(new Date(), 'EEEE, MMMM do')}</p>
             </div>
 
-            <div className="text-4xl font-mono font-bold text-slate-900 dark:text-white tracking-widest">
-                {status === 'in' ? formatTime(elapsed) : '--:--:--'}
+            <div className="text-4xl font-mono font-bold text-slate-900 dark:text-white tracking-widest tabular-nums">
+                {isCheckedIn ? formatTime(elapsed) : '--:--:--'}
             </div>
 
             <div className="flex gap-3 w-full">
-                {status === 'out' ? (
+                {!isCheckedIn ? (
                     <button
-                        onClick={() => handleAction('in')}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium"
+                        onClick={handleCheckIn}
+                        disabled={loading}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-md shadow-green-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        <LogIn className="w-5 h-5" /> Check In
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+                        Check In
                     </button>
                 ) : (
-                    <>
-                        <button
-                            onClick={() => handleAction('out')}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium"
-                        >
-                            <LogOut className="w-5 h-5" /> Clock Out
-                        </button>
-                        {/* Break functionality disabled for simplicity in this version, or can be added */}
-                    </>
+                    <button
+                        onClick={handleCheckOut}
+                        disabled={loading}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-md shadow-red-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
+                        Check Out
+                    </button>
                 )}
             </div>
 
             <div className="text-xs text-slate-400 text-center">
-                {status === 'in'
-                    ? `Check-in time: ${checkInTime ? format(checkInTime, 'h:mm aa') : ''}`
-                    : 'You are currently clocked out'}
+                {isCheckedIn
+                    ? `Started at: ${checkInTime ? format(checkInTime, 'h:mm aa') : ''}`
+                    : 'Ready to start your day?'}
             </div>
         </div>
     )
