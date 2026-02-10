@@ -18,9 +18,7 @@ export default async function DashboardPage() {
     const checkInTime = todaysRecord ? todaysRecord.checkIn : null
 
     return (
-import { ModeToggle } from '@/components/mode-toggle'
 
-    // ...
 
     return (
         <div className="p-8 space-y-8 h-full">
