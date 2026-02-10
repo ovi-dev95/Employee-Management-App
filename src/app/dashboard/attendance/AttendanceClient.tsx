@@ -6,7 +6,7 @@ import { Calendar, Clock, BarChart3, UserCheck, UserX, AlertCircle, FileText, Do
 import { cn } from '@/lib/utils'
 // import { LookerEmbed } from '@/components/dashboard/looker-embed' // Commented out until component is verified
 import { checkIn, checkOut } from '@/app/actions/attendance'
-import { createRequest } from '@/app/actions/requests'
+import { createRequest } from '@/app/actions/request'
 import { toast } from 'sonner' // Assuming sonner or similar is available, or we use alert/custom toast
 
 // Define types based on what we expect from Prism
@@ -105,6 +105,7 @@ export default function AttendanceClient({
                             onCheckIn={handleCheckIn}
                             onCheckOut={handleCheckOut}
                             loading={loading}
+                            user={user}
                         />
                     )}
                     {activeTab === 'team-overview' && <TeamOverview data={teamAttendance} />}
@@ -131,9 +132,21 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
     )
 }
 
-function MyStatsView({ data, isCheckedIn, isCheckedOut, onCheckIn, onCheckOut, loading }: any) {
+function MyStatsView({ data, isCheckedIn, isCheckedOut, onCheckIn, onCheckOut, loading, user }: any) {
     const handleRequestSubmit = async (formData: FormData) => {
-        const res = await createRequest(formData)
+        const type = formData.get("type") as string
+        const from = formData.get("from") as string
+        const to = formData.get("to") as string
+        const reason = formData.get("reason") as string
+
+        const res = await createRequest({
+            title: `${type}`,
+            description: `${reason} (From: ${from} To: ${to})`,
+            type: 'LEAVE',
+            priority: 'MEDIUM',
+            submittedBy: user.id
+        })
+
         if (res.error) alert(res.error)
         else alert("Request submitted successfully")
     }
