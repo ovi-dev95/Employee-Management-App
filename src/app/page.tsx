@@ -21,7 +21,8 @@ export default function Home() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          <div className="relative w-24 h-24 mx-auto mb-6">
+          className="relative w-24 h-24 mx-auto mb-6"
+        >
           <Image
             src="/logo.png"
             alt="Nexus Logo"
@@ -29,7 +30,7 @@ export default function Home() {
             className="object-contain drop-shadow-2xl"
             priority
           />
-        </div>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
