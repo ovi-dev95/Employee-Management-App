@@ -45,6 +45,10 @@ export function Sidebar() {
                 })}
             </nav>
 
+            import {ModeToggle} from '@/components/mode-toggle'
+
+            // ...
+
             <div className="p-4 border-t border-slate-800 space-y-2">
                 <Link
                     href="/dashboard/profile"
@@ -58,6 +62,14 @@ export function Sidebar() {
                     <User className="w-5 h-5" />
                     <span className="font-medium">My Profile</span>
                 </Link>
+
+                <div className="px-4 py-1">
+                    <div className="flex items-center justify-between text-slate-400">
+                        <span className="text-xs font-medium uppercase tracking-wider">Theme</span>
+                        <ModeToggle />
+                    </div>
+                </div>
+
                 <button
                     onClick={() => logout()}
                     className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"

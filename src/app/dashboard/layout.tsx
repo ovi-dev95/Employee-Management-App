@@ -10,9 +10,6 @@ export default function DashboardLayout({
         <div className="flex h-screen bg-slate-950">
             <Sidebar />
             <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
-                <div className="absolute top-4 right-4 z-50">
-                    <ModeToggle />
-                </div>
                 {children}
             </main>
         </div>

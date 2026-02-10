@@ -19,13 +19,20 @@ export default async function DashboardPage() {
 
     return (
         <div className="p-8 space-y-8 h-full">
+            import {ModeToggle} from '@/components/mode-toggle'
+
+            // ...
+
             <header className="flex justify-between items-center animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">The Pulse</h1>
                     <p className="text-slate-500 dark:text-slate-400">Live Analytics & Team Performance</p>
                 </div>
-                <div className="text-sm text-slate-500 bg-white/50 dark:bg-slate-900/50 backdrop-blur px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
-                    Updated: {new Date().toLocaleTimeString()}
+                <div className="flex items-center gap-3">
+                    <div className="text-sm text-slate-500 bg-white/50 dark:bg-slate-900/50 backdrop-blur px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                        Updated: {new Date().toLocaleTimeString()}
+                    </div>
+                    <ModeToggle />
                 </div>
             </header>
 
