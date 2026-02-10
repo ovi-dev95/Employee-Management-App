@@ -1,30 +1,30 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 
+// TEMPORARY: Hardcoded for debugging Vercel Env Var issue
+const prisma = new PrismaClient({
+    datasources: {
+        db: {
+            url: "postgresql://postgres.kdolyswfxzkixknrivao:V%235UT7wE_tbRww%24@aws-1-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true",
+        },
+    },
+})
+
 export async function runSeed() {
     try {
-        console.log('Start seeding via Server Action ...')
+        console.log('Start seeding via Server Action with HARDCODED DB ...')
 
         // 1. Clear existing data
-        // We delete in order of constraints
-        // Note: In production, be careful. This wipes data.
-        // But the user requested a fix for login, effectively a reset.
-
-        // Deleting dependent records first
         await prisma.activity.deleteMany()
         await prisma.vote.deleteMany()
         await prisma.idea.deleteMany()
         await prisma.request.deleteMany()
         await prisma.meeting.deleteMany()
         await prisma.attendance.deleteMany()
-
-        // Delete users
         await prisma.user.deleteMany()
-
-        // Delete settings
         await prisma.systemSettings.deleteMany()
 
         // 2. Create System Settings
@@ -43,7 +43,6 @@ export async function runSeed() {
         const hashedPassword = await bcrypt.hash('password123', 10)
 
         // 4. Create Users
-
         // Admin
         const admin = await prisma.user.create({
             data: {
@@ -125,10 +124,12 @@ export async function runSeed() {
         console.log('Seeding finished via Server Action.')
 
         revalidatePath('/')
-        return { success: true, message: "Database reset and seeded successfully!" }
+        return { success: true, message: "Database reset and seeded successfully with HARDCODED credentials!" }
 
     } catch (error) {
         console.error("Seeding error:", error)
         return { success: false, message: `Seeding failed: ${(error as Error).message}` }
+    } finally {
+        await prisma.$disconnect()
     }
 }
