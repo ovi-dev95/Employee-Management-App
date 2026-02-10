@@ -4,6 +4,7 @@ import { AttendanceWidget } from '@/components/dashboard/attendance-widget'
 import { LookerEmbed } from '@/components/dashboard/looker-embed'
 import { getDashboardStats } from '@/app/actions/dashboard'
 import { getMyAttendance } from '@/app/actions/attendance'
+import { ModeToggle } from '@/components/mode-toggle'
 
 export const dynamic = 'force-dynamic'
 
