@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import bcrypt from "bcryptjs"
 
 export async function login(formData: FormData) {
     const email = formData.get("email") as string
@@ -21,8 +22,11 @@ export async function login(formData: FormData) {
             return { error: "Invalid credentials" }
         }
 
-        // In a real app, verify password hash here.
-        // For now, we accept any password as long as the user exists.
+        const isValid = await bcrypt.compare(password, user.password)
+
+        if (!isValid) {
+            return { error: "Invalid credentials" }
+        }
 
         const cookieStore = await cookies()
         cookieStore.set("auth", "true", { path: "/" }) // For middleware compatibility

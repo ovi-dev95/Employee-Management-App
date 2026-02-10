@@ -1,9 +1,12 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('Start seeding ...')
+
+  const hashedPassword = await bcrypt.hash('password123', 10)
 
   // Create or update the specific admin user
   const admin = await prisma.user.upsert({
@@ -11,40 +14,44 @@ async function main() {
     update: {
       name: 'Md Atiar Rahman Ovi',
       role: 'ADMIN',
-      department: 'WEB', // Assuming Junior Manager is in WEB department or we could add a title field if needed, but role is enough for now. The prompt says Position: Junior Manager. I'll stick to Role: ADMIN but maybe add Position field later if schema allows. For now, Role is used for access control.
-      password: 'scrypt-hash-placeholder',
+      department: 'WEB',
+      password: hashedPassword,
     },
     create: {
       email: 'ovi@razibmarketing.net',
       name: 'Md Atiar Rahman Ovi',
       role: 'ADMIN',
       department: 'WEB',
-      password: 'scrypt-hash-placeholder',
-      points: 1350, // Give some initial points
+      password: hashedPassword,
+      points: 1350,
     },
   })
 
   const editor = await prisma.user.upsert({
     where: { email: 'lead@nexus.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+    },
     create: {
       email: 'lead@nexus.com',
       name: 'Team Lead',
       role: 'EDITOR',
       department: 'SEO',
-      password: 'scrypt-hash-placeholder',
+      password: hashedPassword,
     },
   })
 
   const subscriber = await prisma.user.upsert({
     where: { email: 'member@nexus.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+    },
     create: {
       email: 'member@nexus.com',
       name: 'Team Member',
       role: 'SUBSCRIBER',
       department: 'UI_UX',
-      password: 'scrypt-hash-placeholder',
+      password: hashedPassword,
     },
   })
 
