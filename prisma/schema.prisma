@@ -22,6 +22,11 @@ model User {
   emailNotifications Boolean      @default(true)
   pushNotifications  Boolean      @default(true)
   twoFactorEnabled   Boolean      @default(false)
+  
+  // Invitation System
+  inviteToken        String?      @unique
+  inviteTokenExpiry  DateTime?
+
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   activities         Activity[]
@@ -42,6 +47,15 @@ model SystemSettings {
   paidLeaveDays    Int      @default(15)
   yearlyLeaveDays  Int      @default(20)
   yearlyLeaveDates String?
+  // Email Settings
+  emailProvider    String   @default("smtp") // "smtp" or "brevo"
+  brevoApiKey      String?
+  smtpHost         String?
+  smtpPort         Int?
+  smtpUser         String?
+  smtpPassword     String?
+  smtpFromEmail    String?
+
   updatedAt        DateTime @updatedAt
 }
 

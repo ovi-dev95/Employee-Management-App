@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { getCurrentUser } from "./auth"
+import { getCurrentUser } from "./user"
 
 export async function checkIn() {
     const user = await getCurrentUser()

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X } from 'lucide-react'
+import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateSystemSettings, getSystemSettings } from '@/app/actions/settings'
 import { getUsers, updateUser, deleteUser, createUser } from '@/app/actions/user'
@@ -112,6 +112,7 @@ export default function SettingsPage() {
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={Globe}>General</TabButton>
                     <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users}>Team Members</TabButton>
                     <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={Shield}>Security</TabButton>
+                    <TabButton active={activeTab === 'email'} onClick={() => setActiveTab('email')} icon={Mail}>Email Settings</TabButton>
                     <TabButton active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} icon={Bell}>Notifications</TabButton>
                     <TabButton active={activeTab === 'billing'} onClick={() => setActiveTab('billing')} icon={CreditCard}>Billing</TabButton>
                     <TabButton active={activeTab === 'data'} onClick={() => setActiveTab('data')} icon={Database}>Data & Export</TabButton>
@@ -130,12 +131,84 @@ export default function SettingsPage() {
                         {activeTab === 'general' && <GeneralSettings settings={settings} updateField={updateField} />}
                         {activeTab === 'members' && <MembersSettings users={users} onRefresh={fetchUsers} />}
                         {activeTab === 'security' && <SecuritySettings />}
+                        {activeTab === 'email' && <EmailSettings settings={settings} updateField={updateField} />}
                         {activeTab === 'notifications' && <NotificationSettings />}
                         {activeTab === 'billing' && <BillingSettings />}
                         {activeTab === 'data' && <DataExportSettings />}
                         {activeTab === 'integrations' && <IntegrationSettings settings={settings} updateField={updateField} />}
                         {activeTab === 'leave' && <LeaveManagementSettings settings={settings} updateField={updateField} />}
                     </motion.div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function EmailSettings({ settings, updateField }: any) {
+    return (
+        <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Email Configuration (SMTP)</h2>
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900 rounded-2xl mb-6">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                    Configure your SMTP server to enable email notifications and user invitations.
+                </p>
+            </div>
+
+            <div className="grid gap-4">
+                <div className="grid gap-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Host</label>
+                    <input
+                        type="text"
+                        value={settings.smtpHost || ''}
+                        onChange={(e) => updateField('smtpHost', e.target.value)}
+                        placeholder="smtp.gmail.com"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Port</label>
+                        <input
+                            type="number"
+                            value={settings.smtpPort || ''}
+                            onChange={(e) => updateField('smtpPort', parseInt(e.target.value))}
+                            placeholder="587"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">From Email</label>
+                        <input
+                            type="email"
+                            value={settings.smtpFromEmail || ''}
+                            onChange={(e) => updateField('smtpFromEmail', e.target.value)}
+                            placeholder="noreply@company.com"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid gap-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP User</label>
+                    <input
+                        type="text"
+                        value={settings.smtpUser || ''}
+                        onChange={(e) => updateField('smtpUser', e.target.value)}
+                        placeholder="user@example.com"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                </div>
+
+                <div className="grid gap-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Password</label>
+                    <input
+                        type="password"
+                        value={settings.smtpPassword || ''}
+                        onChange={(e) => updateField('smtpPassword', e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
                 </div>
             </div>
         </div>

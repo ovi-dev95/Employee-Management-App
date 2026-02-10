@@ -11,6 +11,13 @@ export async function updateSystemSettings(data: {
     paidLeaveDays?: number;
     yearlyLeaveDays?: number;
     yearlyLeaveDates?: string;
+    smtpHost?: string;
+    smtpPort?: number;
+    smtpUser?: string;
+    smtpPassword?: string;
+    smtpFromEmail?: string;
+    emailProvider?: string;
+    brevoApiKey?: string;
 }) {
     try {
         const settings = await prisma.systemSettings.upsert({
@@ -20,7 +27,20 @@ export async function updateSystemSettings(data: {
             },
             create: {
                 id: "global",
-                ...data,
+                lookerStudioUrl: data.lookerStudioUrl,
+                checkInTime: data.checkInTime || "12:00 PM",
+                checkOutTime: data.checkOutTime || "08:00 PM",
+                sickLeaveDays: data.sickLeaveDays || 10,
+                paidLeaveDays: data.paidLeaveDays || 15,
+                yearlyLeaveDays: data.yearlyLeaveDays || 20,
+                yearlyLeaveDates: data.yearlyLeaveDates,
+                smtpHost: data.smtpHost,
+                smtpPort: data.smtpPort,
+                smtpUser: data.smtpUser,
+                smtpPassword: data.smtpPassword,
+                smtpFromEmail: data.smtpFromEmail,
+                emailProvider: data.emailProvider || "smtp",
+                brevoApiKey: data.brevoApiKey
             },
         });
 

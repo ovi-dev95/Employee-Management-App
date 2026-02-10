@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/app/actions/auth"
+import { getCurrentUser } from "@/app/actions/user"
 import { getMyAttendance, getTeamAttendance } from "@/app/actions/attendance"
 import AttendanceClient from "./AttendanceClient"
 import { redirect } from "next/navigation"

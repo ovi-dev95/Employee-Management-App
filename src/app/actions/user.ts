@@ -20,13 +20,23 @@ export async function getUsers() {
     }
 }
 
+import { cookies } from "next/headers"
+
 export async function getCurrentUser() {
     try {
-        console.log("getCurrentUser: Fetching for ovi@razibmarketing.net");
-        // For now, fetching the Admin user by email as "current"
+        const cookieStore = await cookies()
+        const userId = cookieStore.get("userId")?.value
+
+        if (!userId) {
+            console.warn("getCurrentUser: No session cookie found")
+            return null
+        }
+
+        console.log("getCurrentUser: Fetching for ID", userId);
         const user = await prisma.user.findUnique({
-            where: { email: "ovi@razibmarketing.net" }
+            where: { id: userId }
         })
+
         if (!user) {
             console.error("getCurrentUser: User not found in database.");
         }
@@ -91,12 +101,36 @@ export async function createUser(data: {
             return { success: false, error: "A user with this email already exists." };
         }
 
+        // Generate Invite Token
+        const inviteToken = crypto.randomUUID();
+        const inviteTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
         const user = await prisma.user.create({
             data: {
                 ...data,
-                password: "scrypt-hash-placeholder", // Placeholder for now
+                password: "setup-required",
+                inviteToken,
+                inviteTokenExpiry
             },
         });
+
+        // Send Email
+        const setupLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/setup-password?token=${inviteToken}`;
+
+        await import("@/lib/email").then(m => m.sendEmail({
+            to: user.email,
+            subject: "Welcome to Razib Marketing - Set up your account",
+            html: `
+                <div style="font-family: sans-serif; color: #333;">
+                    <h1>Welcome, ${user.name}!</h1>
+                    <p>You have been invited to join the Razib Marketing Employee Management Tool.</p>
+                    <p>Please click the link below to set up your password and access your account:</p>
+                    <a href="${setupLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Set Up Account</a>
+                    <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
+                </div>
+            `
+        }));
+
         revalidatePath("/dashboard/settings");
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error) {
