@@ -21,7 +21,7 @@ import { logout } from '@/app/actions/auth'
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Attendance & Leave', href: '/dashboard/attendance', icon: ClipboardList },
-    { name: 'Submit Request', href: '/dashboard/requests/new', icon: PlusCircle },
+    { name: 'Requests', href: '/dashboard/requests', icon: PlusCircle },
     { name: 'University', href: '/dashboard/university', icon: BookOpen },
     { name: 'Product Lab', href: '/dashboard/product-lab', icon: Lightbulb },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
@@ -51,7 +51,12 @@ export function Sidebar() {
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                 {navigation.map((item) => {
-                    const isActive = pathname === item.href
+                    // Logic to prevent "Dashboard" from being active on all sub-routes
+                    // If href is exactly '/dashboard', only match exactly.
+                    // Otherwise check for startsWith.
+                    const isActive = item.href === '/dashboard'
+                        ? pathname === '/dashboard'
+                        : pathname.startsWith(item.href)
 
                     return (
                         <Link

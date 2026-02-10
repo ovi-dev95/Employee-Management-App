@@ -95,7 +95,7 @@ export function AttendanceWidget({ isCheckedIn: initialStatus, checkInTime: init
                     <button
                         onClick={handleCheckIn}
                         disabled={loading}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-md shadow-green-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-md shadow-blue-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
                         Check In
@@ -104,9 +104,9 @@ export function AttendanceWidget({ isCheckedIn: initialStatus, checkInTime: init
                     <button
                         onClick={handleCheckOut}
                         disabled={loading}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-md shadow-red-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-medium shadow-sm active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
                     >
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />}
                         Check Out
                     </button>
                 )}

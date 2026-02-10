@@ -33,6 +33,13 @@ const requestTypes = [
         icon: FileText,
         color: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/10 dark:text-blue-400 dark:border-blue-900/30',
     },
+    {
+        id: 'LEAVE',
+        title: 'Leave Request',
+        description: 'Schedule time off or sick leave.',
+        icon: Clock,
+        color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/10 dark:text-emerald-400 dark:border-emerald-900/30',
+    },
 ]
 
 const requestSchema = z.object({
@@ -48,7 +55,7 @@ export default function RequestsPage() {
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [requests, setRequests] = useState<any[]>([])
     const [currentUser, setCurrentUser] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'NEW' | 'MY_REQUESTS'>('NEW')
+    const [activeTab, setActiveTab] = useState<'NEW' | 'MY_REQUESTS' | 'ALL_REQUESTS'>('NEW')
     const [selectedCategory, setSelectedCategory] = useState('ALL')
     const [editingRequest, setEditingRequest] = useState<any>(null)
 
@@ -88,6 +95,7 @@ export default function RequestsPage() {
                 setIsSubmitted(false)
                 setSelectedType(null)
                 reset()
+                setActiveTab('MY_REQUESTS')
             }, 2000)
         } else {
             alert('Failed to submit request: ' + result.error)
@@ -113,6 +121,15 @@ export default function RequestsPage() {
         }
     }
 
+    const handleStatusChange = async (id: string, newStatus: string) => {
+        const result = await updateRequest(id, { status: newStatus })
+        if (result.success) {
+            fetchData()
+        } else {
+            alert('Failed to update status: ' + result.error)
+        }
+    }
+
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this request?')) return
         const result = await deleteRequest(id)
@@ -124,9 +141,12 @@ export default function RequestsPage() {
     }
 
     const filteredRequests = requests.filter(req => {
-        const matchesUser = activeTab === 'MY_REQUESTS' ? req.submittedBy === currentUser?.id : true
+        let matchesTab = true;
+        if (activeTab === 'MY_REQUESTS') matchesTab = req.submittedBy === currentUser?.id
+        // ALL_REQUESTS shows everything, NEW shows only form (handled in render)
+
         const matchesCategory = selectedCategory === 'ALL' || req.type === selectedCategory
-        return matchesUser && matchesCategory
+        return matchesTab && matchesCategory
     })
 
     return (
@@ -136,11 +156,11 @@ export default function RequestsPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Requests</h1>
                     <p className="text-slate-500 dark:text-slate-400">Manage and track your submitted requests.</p>
                 </div>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('NEW')}
                         className={cn(
-                            "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                             activeTab === 'NEW' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                         )}
                     >
@@ -149,12 +169,23 @@ export default function RequestsPage() {
                     <button
                         onClick={() => setActiveTab('MY_REQUESTS')}
                         className={cn(
-                            "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                            "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                             activeTab === 'MY_REQUESTS' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                         )}
                     >
                         My Requests ({requests.filter(r => r.submittedBy === currentUser?.id).length})
                     </button>
+                    {currentUser?.role === 'ADMIN' && (
+                        <button
+                            onClick={() => setActiveTab('ALL_REQUESTS')}
+                            className={cn(
+                                "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+                                activeTab === 'ALL_REQUESTS' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            )}
+                        >
+                            All Requests ({requests.length})
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -275,13 +306,13 @@ export default function RequestsPage() {
                         </>
                     ) : (
                         <div className="space-y-6">
-                            <div className="flex gap-2 mb-6">
-                                {['ALL', 'BUG', 'DESIGN', 'CONTENT'].map(cat => (
+                            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                                {['ALL', 'BUG', 'DESIGN', 'CONTENT', 'LEAVE'].map(cat => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
                                         className={cn(
-                                            "px-4 py-1.5 rounded-full text-xs font-bold transition-all border",
+                                            "px-4 py-1.5 rounded-full text-xs font-bold transition-all border whitespace-nowrap",
                                             selectedCategory === cat
                                                 ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900"
                                                 : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400"
@@ -301,17 +332,36 @@ export default function RequestsPage() {
                                 ) : (
                                     filteredRequests.map(req => (
                                         <div key={req.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 group">
-                                            <div className={cn("p-3 rounded-xl shrink-0", requestTypes.find(t => t.id === req.type)?.color)}>
-                                                {(() => {
-                                                    const Icon = requestTypes.find(t => t.id === req.type)?.icon
-                                                    return Icon ? <Icon className="w-6 h-6" /> : <FileText className="w-6 h-6" />
-                                                })()}
+                                            <div className="shrink-0 flex flex-col items-center gap-2">
+                                                <div className={cn("p-3 rounded-xl", requestTypes.find(t => t.id === req.type)?.color)}>
+                                                    {(() => {
+                                                        const Icon = requestTypes.find(t => t.id === req.type)?.icon
+                                                        return Icon ? <Icon className="w-6 h-6" /> : <FileText className="w-6 h-6" />
+                                                    })()}
+                                                </div>
+                                                {currentUser?.role === 'ADMIN' && req.status === 'PENDING' && (
+                                                    <div className="flex flex-col gap-1">
+                                                        <button
+                                                            onClick={() => handleStatusChange(req.id, 'APPROVED')}
+                                                            className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200" title="Approve"
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleStatusChange(req.id, 'REJECTED')}
+                                                            className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200" title="Reject"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className={cn(
                                                         "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                                                        req.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                                                        req.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                            req.status === 'APPROVED' || req.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                                     )}>
                                                         {req.status}
                                                     </span>
@@ -321,6 +371,11 @@ export default function RequestsPage() {
                                                     )}>
                                                         {req.priority}
                                                     </span>
+                                                    {activeTab === 'ALL_REQUESTS' && req.user && (
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 ml-auto">
+                                                            {req.user.name}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h3 className="font-bold text-slate-900 dark:text-white truncate">{req.title}</h3>
                                                 <p className="text-sm text-slate-500 truncate">{req.description}</p>

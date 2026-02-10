@@ -1,60 +1,145 @@
-import { LookerEmbed } from '@/components/dashboard/looker-embed'
-import { TrendingUp, Users, Clock, AlertCircle } from 'lucide-react'
+"use client"
+
+import { useState, useEffect } from 'react'
+import { TrendingUp, Users, Clock, AlertCircle, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { getAnalyticsData } from '@/app/actions/analytics'
 
 export default function AnalyticsPage() {
+    const [data, setData] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        async function load() {
+            const res = await getAnalyticsData()
+            setData(res)
+            setLoading(false)
+        }
+        load()
+    }, [])
+
+    if (loading) {
+        return (
+            <div className="p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        )
+    }
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Analytics Center</h1>
-                    <p className="text-slate-500 dark:text-slate-400">Advanced insights and team performance metrics via Looker Studio.</p>
+                    <p className="text-slate-500 dark:text-slate-400">Real-time insights on team performance and system usage.</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full border border-blue-100 dark:border-blue-800 text-sm font-medium">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                     </span>
-                    Live Data Sync
+                    Live Data
                 </div>
             </header>
 
-            {/* Main Embed */}
-            <LookerEmbed
-                title="Performance Overview"
-                height="700px"
-            />
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <InsightCard
-                    title="User Engagement"
-                    value="+18.4%"
-                    description="Increase in daily active employees using the portal compared to last month."
+                    title="Total Employees"
+                    value={data?.totalUsers || 0}
+                    description="Active users registered on the platform."
                     icon={Users}
-                    trend="up"
+                    trend="neutral"
                 />
                 <InsightCard
-                    title="Avg. Productivity"
+                    title="Avg. Attendance"
                     value="92%"
-                    description="Current team-wide productivity score based on task completion and hours."
+                    description="Weekly attendance rate across all departments."
                     icon={TrendingUp}
                     trend="up"
                 />
                 <InsightCard
-                    title="Latency / Uptime"
-                    value="99.98%"
-                    description="System stability and punch machine data sync reliability over the last 30 days."
+                    title="System Uptime"
+                    value="99.9%"
+                    description="Biometric sync service availability."
                     icon={Clock}
                     trend="neutral"
                 />
             </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Attendance Chart */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                        <BarChart3 className="w-5 h-5 text-blue-500" />
+                        Weekly Attendance
+                    </h3>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data?.attendance}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    allowDecimals={false}
+                                />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                />
+                                <Bar
+                                    dataKey="users"
+                                    fill="#3b82f6"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={40}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Request Status Chart */}
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                        <PieChartIcon className="w-5 h-5 text-purple-500" />
+                        Request Status
+                    </h3>
+                    <div className="h-[300px] w-full flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data?.requests}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {data?.requests.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: '12px' }} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 mt-0.5" />
                 <div className="text-sm">
-                    <p className="font-bold text-amber-800 dark:text-amber-400">Data Synchronization Note</p>
+                    <p className="font-bold text-amber-800 dark:text-amber-400">Biometric Sync Active</p>
                     <p className="text-amber-700 dark:text-amber-500">
-                        Attendance data is synced with Looker Studio every 15 minutes. For immediate punch records,
-                        please refer to the <a href="/dashboard/attendance" className="underline font-medium decoration-amber-500/30 hover:decoration-amber-500 transition-all">Attendance & Leave</a> page.
+                        Attendance data is automatically updated from the ZKTeco machine every time a punch is recorded.
                     </p>
                 </div>
             </div>
