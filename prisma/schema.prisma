@@ -89,8 +89,10 @@ model SOP {
   id        String   @id @default(uuid())
   title     String
   category  String
-  videoUrl  String?
-  content   String
+  videoUrl     String?
+  docUrl       String?
+  featureImage String?
+  content      String
   views     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

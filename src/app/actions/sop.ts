@@ -21,6 +21,8 @@ export async function createSOP(data: {
     title: string;
     category: string;
     videoUrl?: string;
+    docUrl?: string;
+    featureImage?: string;
     content: string;
     userId?: string; // Optional for logging
 }) {
@@ -59,6 +61,8 @@ export async function updateSOP(id: string, data: {
     title?: string;
     category?: string;
     videoUrl?: string;
+    docUrl?: string;
+    featureImage?: string;
     content?: string;
     userId?: string;
 }) {

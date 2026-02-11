@@ -20,6 +20,8 @@ export default function UniversityPage() {
         title: '',
         category: 'GENERAL',
         videoUrl: '',
+        docUrl: '',
+        featureImage: '',
         content: ''
     })
     const [editingSop, setEditingSop] = useState<any>(null)
@@ -54,7 +56,7 @@ export default function UniversityPage() {
         const result = await createSOP({ ...newSop, userId: currentUser.id })
         if (result.success) {
             setIsAddModalOpen(false)
-            setNewSop({ title: '', category: 'GENERAL', videoUrl: '', content: '' })
+            setNewSop({ title: '', category: 'GENERAL', videoUrl: '', docUrl: '', featureImage: '', content: '' })
             fetchSops()
         } else {
             alert('Failed to add SOP: ' + result.error)
@@ -70,6 +72,8 @@ export default function UniversityPage() {
             title: editingSop.title,
             category: editingSop.category,
             videoUrl: editingSop.videoUrl,
+            docUrl: editingSop.docUrl,
+            featureImage: editingSop.featureImage,
             content: editingSop.content,
             userId: currentUser.id
         })
@@ -97,7 +101,11 @@ export default function UniversityPage() {
         await incrementSOPViews(sop.id)
         fetchSops()
         // Here you would typically open a viewer modal or navigate
-        alert(`Opening SOP: ${sop.title}\n\nContent: ${sop.content}`)
+        if (sop.docUrl) {
+            window.open(sop.docUrl, '_blank')
+        } else {
+            alert(`Opening SOP: ${sop.title}\n\nContent: ${sop.content}`)
+        }
     }
 
     const filteredSops = sops.filter(sop => {
@@ -171,10 +179,13 @@ export default function UniversityPage() {
                                     className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden group cursor-pointer relative"
                                 >
                                     <div className={cn("h-40 relative flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950")}>
-                                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        {sop.featureImage ? (
+                                            <img src={sop.featureImage} alt={sop.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                                        ) : null}
+                                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform relative z-10">
                                             <PlayCircle className="w-6 h-6 text-white" />
                                         </div>
-                                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -243,7 +254,7 @@ export default function UniversityPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden"
+                            className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden max-h-[90vh] overflow-y-auto"
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
@@ -291,6 +302,29 @@ export default function UniversityPage() {
                                             placeholder="YouTube/Loom link"
                                             value={newSop.videoUrl}
                                             onChange={(e) => setNewSop({ ...newSop, videoUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Drive / Doc Link</label>
+                                        <input
+                                            type="url"
+                                            placeholder="Google Drive/Doc link"
+                                            value={newSop.docUrl}
+                                            onChange={(e) => setNewSop({ ...newSop, docUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image URL</label>
+                                        <input
+                                            type="url"
+                                            placeholder="Image URL"
+                                            value={newSop.featureImage}
+                                            onChange={(e) => setNewSop({ ...newSop, featureImage: e.target.value })}
                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         />
                                     </div>
@@ -345,7 +379,7 @@ export default function UniversityPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden"
+                            className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden max-h-[90vh] overflow-y-auto"
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
@@ -391,6 +425,27 @@ export default function UniversityPage() {
                                             type="url"
                                             value={editingSop.videoUrl || ''}
                                             onChange={(e) => setEditingSop({ ...editingSop, videoUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Drive / Doc Link</label>
+                                        <input
+                                            type="url"
+                                            value={editingSop.docUrl || ''}
+                                            onChange={(e) => setEditingSop({ ...editingSop, docUrl: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image URL</label>
+                                        <input
+                                            type="url"
+                                            value={editingSop.featureImage || ''}
+                                            onChange={(e) => setEditingSop({ ...editingSop, featureImage: e.target.value })}
                                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                         />
                                     </div>

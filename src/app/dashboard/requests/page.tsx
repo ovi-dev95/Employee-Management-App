@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { AlertCircle, Palette, FileText, Send, CheckCircle2, Clock, Trash2, Edit2, X } from 'lucide-react'
+import { AlertCircle, Palette, FileText, Send, CheckCircle2, Clock, Trash2, Edit2, X, Megaphone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -40,12 +40,19 @@ const requestTypes = [
         icon: Clock,
         color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/10 dark:text-emerald-400 dark:border-emerald-900/30',
     },
+    {
+        id: 'PAID_MEDIA',
+        title: 'Paid Media Request',
+        description: 'Budget approval, ad creatives, or campaign setup.',
+        icon: Megaphone,
+        color: 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 dark:bg-orange-900/10 dark:text-orange-400 dark:border-orange-900/30',
+    },
 ]
 
 const requestSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters'),
     description: z.string().min(10, 'Description must be detailed'),
-    priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+    priority: z.string(),
 })
 
 type RequestFormData = z.infer<typeof requestSchema>
@@ -256,15 +263,30 @@ export default function RequestsPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Priority</label>
+                                                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                                    {selectedType === 'LEAVE' ? 'Leave Type' : 'Priority'}
+                                                </label>
                                                 <select
                                                     {...register('priority')}
                                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
                                                 >
-                                                    <option value="LOW">Low - When possible</option>
-                                                    <option value="MEDIUM">Medium - Standard workflow</option>
-                                                    <option value="HIGH">High - Important deadline</option>
-                                                    <option value="URGENT">Urgent - Blocks production</option>
+                                                    {selectedType === 'LEAVE' ? (
+                                                        <>
+                                                            <option value="SICK_LEAVE">Sick Leave</option>
+                                                            <option value="CASUAL_LEAVE">Casual Leave</option>
+                                                            <option value="EMERGENCY_LEAVE">Emergency Leave</option>
+                                                            <option value="MATERNITY_PATERNITY">Maternity/Paternity</option>
+                                                            <option value="UNPAID_LEAVE">Unpaid Leave</option>
+                                                            <option value="OTHER">Other</option>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <option value="LOW">Low - When possible</option>
+                                                            <option value="MEDIUM">Medium - Standard workflow</option>
+                                                            <option value="HIGH">High - Important deadline</option>
+                                                            <option value="URGENT">Urgent - Blocks production</option>
+                                                        </>
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>
@@ -307,7 +329,7 @@ export default function RequestsPage() {
                     ) : (
                         <div className="space-y-6">
                             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                                {['ALL', 'BUG', 'DESIGN', 'CONTENT', 'LEAVE'].map(cat => (
+                                {['ALL', 'BUG', 'DESIGN', 'CONTENT', 'LEAVE', 'PAID_MEDIA'].map(cat => (
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
@@ -367,9 +389,11 @@ export default function RequestsPage() {
                                                     </span>
                                                     <span className={cn(
                                                         "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
-                                                        req.priority === 'URGENT' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'
+                                                        req.priority === 'URGENT' || req.priority === 'EMERGENCY_LEAVE' ? 'bg-red-100 text-red-600' :
+                                                            req.priority === 'HIGH' || req.priority === 'SICK_LEAVE' ? 'bg-orange-100 text-orange-600' :
+                                                                'bg-slate-100 text-slate-600'
                                                     )}>
-                                                        {req.priority}
+                                                        {req.priority.replace('_', ' ')}
                                                     </span>
                                                     {activeTab === 'ALL_REQUESTS' && req.user && (
                                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 ml-auto">
@@ -441,16 +465,31 @@ export default function RequestsPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300 uppercase tracking-tighter">Priority</label>
+                                        <label className="block text-sm font-bold mb-1 text-slate-700 dark:text-slate-300 uppercase tracking-tighter">
+                                            {editingRequest.type === 'LEAVE' ? 'Leave Type' : 'Priority'}
+                                        </label>
                                         <select
                                             value={editingRequest.priority}
                                             onChange={e => setEditingRequest({ ...editingRequest, priority: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950"
                                         >
-                                            <option value="LOW">Low</option>
-                                            <option value="MEDIUM">Medium</option>
-                                            <option value="HIGH">High</option>
-                                            <option value="URGENT">Urgent</option>
+                                            {editingRequest.type === 'LEAVE' ? (
+                                                <>
+                                                    <option value="SICK_LEAVE">Sick Leave</option>
+                                                    <option value="CASUAL_LEAVE">Casual Leave</option>
+                                                    <option value="EMERGENCY_LEAVE">Emergency Leave</option>
+                                                    <option value="MATERNITY_PATERNITY">Maternity/Paternity</option>
+                                                    <option value="UNPAID_LEAVE">Unpaid Leave</option>
+                                                    <option value="OTHER">Other</option>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value="LOW">Low</option>
+                                                    <option value="MEDIUM">Medium</option>
+                                                    <option value="HIGH">High</option>
+                                                    <option value="URGENT">Urgent</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                     <div>

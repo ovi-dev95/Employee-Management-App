@@ -52,7 +52,13 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("sendEmail: Brevo API Error", errorData);
-                return { success: false, error: `Brevo Error: ${errorData.message || response.statusText}` };
+
+                let errorMessage = `Brevo Error: ${errorData.message || response.statusText}`;
+                if (errorMessage.includes("unrecognized IP address")) {
+                    errorMessage += " (Action Required: Disable IP restrictions in your Brevo API Key settings)";
+                }
+
+                return { success: false, error: errorMessage };
             }
 
             const data = await response.json();
