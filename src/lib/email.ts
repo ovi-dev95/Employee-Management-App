@@ -22,7 +22,11 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
         const fromEmail = settings.smtpFromEmail || settings.smtpUser || 'noreply@razibmarketing.net';
         const senderName = settings.smtpUser || 'Razib Marketing';
 
-        if (settings.emailProvider === 'brevo' && settings.brevoApiKey) {
+        if (settings.emailProvider === 'brevo') {
+            if (!settings.brevoApiKey) {
+                console.error("sendEmail: Brevo selected but API key is missing");
+                return { success: false, error: "Brevo API Key is missing" };
+            }
             console.log("sendEmail: Using Brevo API v3");
 
             const response = await fetch('https://api.brevo.com/v3/smtp/email', {

@@ -424,6 +424,9 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
             const result = await createUser(inviteData)
             console.log("handleInvite: Create user result", result);
             if (result.success) {
+                if (result.warning) {
+                    alert('User created, but email failed to send: ' + result.warning);
+                }
                 console.log("handleInvite: Success! Refreshing list.");
                 setIsInviteModalOpen(false)
                 setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB' })

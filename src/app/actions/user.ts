@@ -117,7 +117,8 @@ export async function createUser(data: {
         // Send Email
         const setupLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/setup-password?token=${inviteToken}`;
 
-        await import("@/lib/email").then(m => m.sendEmail({
+        const emailModule = await import("@/lib/email");
+        const emailResult = await emailModule.sendEmail({
             to: user.email,
             subject: "Welcome to Razib Marketing - Set up your account",
             html: `
@@ -129,7 +130,15 @@ export async function createUser(data: {
                     <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
                 </div>
             `
-        }));
+        });
+
+        if (!emailResult.success) {
+            console.error("createUser: Failed to send email", emailResult.error);
+            // Optional: Delete user if email fails so they can try again?
+            // await prisma.user.delete({ where: { id: user.id } });
+            // return { success: false, error: "User created but email failed: " + emailResult.error };
+            return { success: true, user: JSON.parse(JSON.stringify(user)), warning: "User created, but email failed to send: " + emailResult.error };
+        }
 
         revalidatePath("/dashboard/settings");
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
