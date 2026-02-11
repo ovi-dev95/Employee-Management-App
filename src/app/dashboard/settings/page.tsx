@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X, Mail } from 'lucide-react'
+import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X, Mail, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateSystemSettings, getSystemSettings } from '@/app/actions/settings'
 import { getUsers, updateUser, deleteUser, createUser } from '@/app/actions/user'
@@ -19,7 +19,13 @@ export default function SettingsPage() {
         sickLeaveDays: 10,
         paidLeaveDays: 15,
         yearlyLeaveDays: 20,
-        yearlyLeaveDates: "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
+        yearlyLeaveDates: "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas",
+        smtpHost: "",
+        smtpPort: 587,
+        smtpUser: "",
+        smtpPassword: "",
+        smtpFromEmail: "",
+        pointValues: { login: 1, idea: 10, request: 5, sop: 20 }
     })
 
     const fetchUsers = async () => {
@@ -32,7 +38,8 @@ export default function SettingsPage() {
         if (settingsData) {
             setSettings({
                 ...settingsData,
-                yearlyLeaveDates: settingsData.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas"
+                yearlyLeaveDates: settingsData.yearlyLeaveDates || "Feb 14 - Eid, Mar 26 - Independence, Dec 25 - Xmas",
+                pointValues: settingsData.pointValues ? JSON.parse(settingsData.pointValues) : { login: 1, idea: 10, request: 5, sop: 20 }
             })
         }
     }
@@ -51,7 +58,13 @@ export default function SettingsPage() {
             sickLeaveDays: parseInt(settings.sickLeaveDays),
             paidLeaveDays: parseInt(settings.paidLeaveDays),
             yearlyLeaveDays: parseInt(settings.yearlyLeaveDays),
-            yearlyLeaveDates: settings.yearlyLeaveDates
+            yearlyLeaveDates: settings.yearlyLeaveDates,
+            smtpHost: settings.smtpHost,
+            smtpPort: parseInt(settings.smtpPort),
+            smtpUser: settings.smtpUser,
+            smtpPassword: settings.smtpPassword,
+            smtpFromEmail: settings.smtpFromEmail,
+            pointValues: JSON.stringify(settings.pointValues)
         })
 
         setIsLoading(false)
@@ -118,6 +131,7 @@ export default function SettingsPage() {
                     <TabButton active={activeTab === 'data'} onClick={() => setActiveTab('data')} icon={Database}>Data & Export</TabButton>
                     <TabButton active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={TerminalSquare}>Integrations</TabButton>
                     <TabButton active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} icon={CalendarDays}>Leave Management</TabButton>
+                    <TabButton active={activeTab === 'points'} onClick={() => setActiveTab('points')} icon={Trophy}>Gamification (Points)</TabButton>
                 </nav>
 
                 {/* Content Area */}
@@ -137,6 +151,7 @@ export default function SettingsPage() {
                         {activeTab === 'data' && <DataExportSettings />}
                         {activeTab === 'integrations' && <IntegrationSettings settings={settings} updateField={updateField} />}
                         {activeTab === 'leave' && <LeaveManagementSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'points' && <PointsSettings settings={settings} updateField={updateField} />}
                     </motion.div>
                 </div>
             </div>
@@ -385,7 +400,6 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                     </div>
                 ) : (
                     users.map((member, i) => {
-                        console.log(`Rendering member ${i}:`, member.email, member.role);
                         return (
                             <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
                                 <div className="flex items-center justify-between">
@@ -784,9 +798,6 @@ function LeaveManagementSettings({ settings, updateField }: any) {
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Leave Policy</h2>
                     <p className="text-sm text-slate-500">Configure global leave days and balance for all employees.</p>
                 </div>
-                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
-                    Admin Privileges
-                </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -794,8 +805,8 @@ function LeaveManagementSettings({ settings, updateField }: any) {
                     title="Sick Leave Days"
                     value={settings.sickLeaveDays}
                     onChange={(val: any) => updateField('sickLeaveDays', val)}
-                    icon={Clock}
-                    color="text-red-500"
+                    icon={CreditCard}
+                    color="text-emerald-500"
                 />
                 <LeaveInput
                     title="Paid Leave Days"
@@ -867,6 +878,48 @@ function LeaveInput({ title, value, onChange, icon: Icon, color }: any) {
                 <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 flex items-center gap-1.5 text-indigo-500 bg-indigo-500/5 px-2 py-1 rounded-lg">
                     <span className="text-[9px] font-black uppercase tracking-widest">Edit</span>
                 </div>
+            </div>
+        </div>
+    )
+}
+
+function PointsSettings({ settings, updateField }: any) {
+    const updatePoint = (key: string, val: number) => {
+        updateField('pointValues', { ...settings.pointValues, [key]: val })
+    }
+
+    const keys = ['login', 'idea', 'request', 'sop']
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Gamification & Points</h2>
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900 rounded-2xl mb-6">
+                <p className="text-sm text-purple-800 dark:text-purple-300">
+                    Define how many points employees earn for specific activities. This fuels the leaderboard and rewards system.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.keys(settings.pointValues || {}).concat(keys.filter(k => !settings.pointValues?.[k])).map((key) => {
+                    if (key === 'undefined') return null;
+                    return (
+                        <div key={key} className="p-5 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between">
+                            <div>
+                                <p className="font-bold text-slate-700 dark:text-slate-300 capitalize">{key.replace('_', ' ')}</p>
+                                <p className="text-xs text-slate-400">Points per action</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    value={settings.pointValues?.[key] || 0}
+                                    onChange={(e) => updatePoint(key, parseInt(e.target.value))}
+                                    className="w-20 px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-right outline-none focus:border-blue-500"
+                                />
+                                <Trophy className="w-4 h-4 text-amber-500" />
+                            </div>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )

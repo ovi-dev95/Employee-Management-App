@@ -162,3 +162,24 @@ export async function getActivities(limit: number = 5, category?: string) {
         return [];
     }
 }
+
+export async function getLeaderboard(limit: number = 5) {
+    try {
+        const users = await prisma.user.findMany({
+            orderBy: { points: 'desc' },
+            take: limit,
+            select: {
+                id: true,
+                name: true,
+                points: true,
+                role: true,
+                avatar: true,
+                department: true
+            }
+        });
+        return JSON.parse(JSON.stringify(users));
+    } catch (error) {
+        console.error("Failed to fetch leaderboard:", error);
+        return [];
+    }
+}

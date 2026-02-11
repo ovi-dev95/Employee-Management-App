@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils'
 // import { LookerEmbed } from '@/components/dashboard/looker-embed' // Commented out until component is verified
 import { checkIn, checkOut } from '@/app/actions/attendance'
 import { createRequest } from '@/app/actions/request'
-import { toast } from 'sonner' // Assuming sonner or similar is available, or we use alert/custom toast
+import { toast } from 'sonner'
+import { AttendanceTrendsChart } from '@/components/dashboard/attendance-trends-chart'
 
 // Define types based on what we expect from Prism
 type AttendanceRecord = {
@@ -324,46 +325,54 @@ function TeamOverview({ data }: any) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                        {data.map((row: any, i: number) => (
-                            <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shadow-md">
-                                            {row.name.substring(0, 2)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-slate-900 dark:text-white">{row.name}</p>
-                                            <p className="text-xs text-slate-500">{row.role}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                        {row.dept}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={cn(
-                                        "px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5",
-                                        row.status.includes('Present') ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
-                                            row.status === 'Absent' ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400" :
-                                                "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
-                                    )}>
-                                        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse",
-                                            row.status.includes('Present') ? "bg-emerald-500" :
-                                                row.status === 'Absent' ? "bg-red-500" : "bg-blue-500"
-                                        )} />
-                                        {row.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 font-mono text-slate-500 text-xs">{row.checkIn}</td>
-                                <td className="px-6 py-4 text-right">
-                                    <button className="text-blue-600 dark:text-blue-400 text-xs font-bold hover:underline opacity-0 group-hover:opacity-100 transition-opacity">
-                                        View Details
-                                    </button>
+                        {data.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                    No team data available.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            data.map((row: any, i: number) => (
+                                <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shadow-md">
+                                                {row.name.substring(0, 2)}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 dark:text-white">{row.name}</p>
+                                                <p className="text-xs text-slate-500">{row.role}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                            {row.dept}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={cn(
+                                            "px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5",
+                                            row.status.includes('Present') ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" :
+                                                row.status === 'Absent' ? "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400" :
+                                                    "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
+                                        )}>
+                                            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse",
+                                                row.status.includes('Present') ? "bg-emerald-500" :
+                                                    row.status === 'Absent' ? "bg-red-500" : "bg-blue-500"
+                                            )} />
+                                            {row.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-slate-500 text-xs">{row.checkIn}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <button className="text-blue-600 dark:text-blue-400 text-xs font-bold hover:underline opacity-0 group-hover:opacity-100 transition-opacity">
+                                            View Details
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -373,12 +382,37 @@ function TeamOverview({ data }: any) {
 
 function AnalyticsView() {
     return (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 glass-card rounded-3xl">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                <BarChart3 className="w-8 h-8" />
+        <div className="space-y-6">
+            <div className="glass-card p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Attendance Trends</h3>
+                        <p className="text-sm text-slate-500">Weekly check-in vs absent rate</p>
+                    </div>
+                    <select className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold outline-none">
+                        <option>This Week</option>
+                        <option>Last Week</option>
+                    </select>
+                </div>
+                <div className="h-[400px] w-full">
+                    <AttendanceTrendsChart />
+                </div>
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Analytics Dashboard</h3>
-            <p className="text-slate-500 max-w-md">The analytics module is currently being connected to Looker Studio. Please check back later.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900 text-center">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mb-2">Avg. Work Hours</p>
+                    <p className="text-4xl font-black text-slate-900 dark:text-white">8.2h</p>
+                </div>
+                <div className="p-6 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900 text-center">
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider mb-2">On-Time Rate</p>
+                    <p className="text-4xl font-black text-slate-900 dark:text-white">94%</p>
+                </div>
+                <div className="p-6 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900 text-center">
+                    <p className="text-sm text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider mb-2">Leave Utilization</p>
+                    <p className="text-4xl font-black text-slate-900 dark:text-white">12%</p>
+                </div>
+            </div>
         </div>
     )
 }

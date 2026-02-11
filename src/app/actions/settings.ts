@@ -18,6 +18,7 @@ export async function updateSystemSettings(data: {
     smtpFromEmail?: string;
     emailProvider?: string;
     brevoApiKey?: string;
+    pointValues?: string;
 }) {
     try {
         const settings = await prisma.systemSettings.upsert({
@@ -40,7 +41,8 @@ export async function updateSystemSettings(data: {
                 smtpPassword: data.smtpPassword,
                 smtpFromEmail: data.smtpFromEmail,
                 emailProvider: data.emailProvider || "smtp",
-                brevoApiKey: data.brevoApiKey
+                brevoApiKey: data.brevoApiKey,
+                pointValues: data.pointValues || JSON.stringify({ login: 1, idea: 10, request: 5, sop: 20 })
             },
         });
 

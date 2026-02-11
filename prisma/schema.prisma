@@ -55,6 +55,7 @@ model SystemSettings {
   smtpUser         String?
   smtpPassword     String?
   smtpFromEmail    String?
+  pointValues      String?  @default("{\"login\":1,\"idea\":10,\"request\":5,\"sop\":20}")
 
   updatedAt        DateTime @updatedAt
 }

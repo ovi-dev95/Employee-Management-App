@@ -17,6 +17,7 @@ import {
     PlusCircle
 } from 'lucide-react'
 import { logout } from '@/app/actions/auth'
+import { motion, LayoutGroup } from 'framer-motion'
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -50,30 +51,34 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {navigation.map((item) => {
-                    // Logic to prevent "Dashboard" from being active on all sub-routes
-                    // If href is exactly '/dashboard', only match exactly.
-                    // Otherwise check for startsWith.
-                    const isActive = item.href === '/dashboard'
-                        ? pathname === '/dashboard'
-                        : pathname.startsWith(item.href)
+                <LayoutGroup>
+                    {navigation.map((item) => {
+                        const isActive = item.href === '/dashboard'
+                            ? pathname === '/dashboard'
+                            : pathname.startsWith(item.href)
 
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                isActive
-                                    ? "bg-blue-600/10 text-blue-400 shadow-sm border border-blue-600/20"
-                                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                            )}
-                        >
-                            <item.icon className={cn("w-5 h-5", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-white")} />
-                            <span className="font-medium">{item.name}</span>
-                        </Link>
-                    )
-                })}
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={cn(
+                                    "relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 group z-10",
+                                    isActive ? "text-blue-400" : "text-slate-400 hover:text-white"
+                                )}
+                            >
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-blue-600/10 border border-blue-600/20 rounded-xl -z-10"
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    />
+                                )}
+                                <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-white")} />
+                                <span className="font-medium">{item.name}</span>
+                            </Link>
+                        )
+                    })}
+                </LayoutGroup>
             </nav>
 
             <div className="p-4 border-t border-slate-800 space-y-2">

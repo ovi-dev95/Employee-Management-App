@@ -44,3 +44,25 @@ export async function getDashboardStats() {
         };
     }
 }
+
+
+export async function getLeaveStats(userId?: string) {
+    try {
+        const settings = await prisma.systemSettings.findUnique({ where: { id: "global" } });
+        const total = (settings?.sickLeaveDays || 0) + (settings?.paidLeaveDays || 0) + (settings?.yearlyLeaveDays || 0);
+
+        // In a real app, query 'Request' table for approved 'LEAVE' type requests
+        // mocking for now as User requested visual only first
+        return {
+            total: total || 45,
+            taken: 5,
+            remaining: (total || 45) - 5
+        };
+    } catch (error) {
+        return {
+            total: 0,
+            taken: 0,
+            remaining: 0
+        };
+    }
+}
