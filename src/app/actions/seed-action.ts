@@ -1,17 +1,9 @@
 "use server"
 
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 
-// TEMPORARY: Hardcoded for debugging Vercel Env Var issue
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: "postgresql://postgres.kdolyswfxzkixknrivao:V%235UT7wE_tbRww%24@aws-1-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true",
-        },
-    },
-})
 
 export async function runSeed() {
     try {
@@ -129,7 +121,5 @@ export async function runSeed() {
     } catch (error) {
         console.error("Seeding error:", error)
         return { success: false, message: `Seeding failed: ${(error as Error).message}` }
-    } finally {
-        await prisma.$disconnect()
     }
 }

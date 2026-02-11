@@ -6,6 +6,20 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Start seeding ...')
 
+  // Create System Settings
+  await prisma.systemSettings.upsert({
+    where: { id: 'global' },
+    update: {},
+    create: {
+      id: 'global',
+      checkInTime: '10:00 AM',
+      checkOutTime: '06:00 PM',
+      sickLeaveDays: 12,
+      paidLeaveDays: 15,
+      yearlyLeaveDays: 20
+    }
+  })
+
   const hashedPassword = await bcrypt.hash('password123', 10)
 
   // Create or update the specific admin user
