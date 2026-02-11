@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X, Mail, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { updateSystemSettings, getSystemSettings } from '@/app/actions/settings'
+import { updateSystemSettings, getSystemSettings, testEmailConfiguration } from '@/app/actions/settings'
 import { getUsers, updateUser, deleteUser, createUser } from '@/app/actions/user'
 
 export default function SettingsPage() {
@@ -208,9 +208,7 @@ function EmailSettings({ settings, updateField }: any) {
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sender Name</label>
                             <input
                                 type="text"
-                                value={settings.smtpUser || ''} // Using smtpUser for sender name in Brevo Context or add new field? Let's check schema. Schema only has specific fields. Let's use smtpUser for Sender Name if confused, OR just use smtpFromEmail and extract name or assume hardcoded. 
-                                // Actually, Brevo API usually takes name separately. 
-                                // Schema has `smtpUser`. Let's assume `smtpUser` is Sender Name for Brevo mode to save schema migration.
+                                value={settings.smtpUser || ''}
                                 onChange={(e) => updateField('smtpUser', e.target.value)}
                                 placeholder="My Company"
                                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -287,6 +285,11 @@ function EmailSettings({ settings, updateField }: any) {
                     </div>
                 </div>
             )}
+
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+                <EmailTestButton />
+            </div>
+
         </div>
     )
 }
@@ -985,6 +988,83 @@ function PointsSettings({ settings, updateField }: any) {
                     )
                 })}
             </div>
+        </div>
+    )
+}
+
+function EmailTestButton({ settings, updateField }: any) {
+    const [testEmail, setTestEmail] = useState('')
+    const [isTesting, setIsTesting] = useState(false)
+    const [testResult, setResult] = useState<any>(null)
+
+    const handleTest = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!testEmail) return
+
+        setIsTesting(true)
+        setResult(null)
+        try {
+            const result = await testEmailConfiguration(testEmail)
+            setResult(result)
+        } catch (error) {
+            setResult({ success: false, error: 'Network error occurred' })
+        } finally {
+            setIsTesting(false)
+        }
+    }
+
+    return (
+        <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white uppercase text-xs tracking-wider flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-500" /> Test Email Configuration
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+                Send a test email to verify your settings are working correctly.
+            </p>
+
+            <div className="flex gap-2">
+                <input
+                    type="email"
+                    placeholder="Enter recipient email"
+                    value={testEmail}
+                    onChange={e => setTestEmail(e.target.value)}
+                    className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                />
+                <button
+                    onClick={handleTest}
+                    disabled={isTesting || !testEmail}
+                    className="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-sm font-bold whitespace-nowrap disabled:opacity-50"
+                >
+                    {isTesting ? 'Sending...' : 'Send Test'}
+                </button>
+            </div>
+
+            {testResult && (
+                <div className={cn(
+                    "p-3 rounded-lg text-sm border flex items-start gap-2",
+                    testResult.success
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/10 dark:border-emerald-900/30"
+                        : "bg-red-50 text-red-600 border-red-200 dark:bg-red-900/10 dark:border-red-900/30"
+                )}>
+                    {testResult.success ? (
+                        <>
+                            <CheckCircle2 className="w-5 h-5 shrink-0" />
+                            <div>
+                                <p className="font-bold">Email Sent Successfully!</p>
+                                <p className="text-xs opacity-90">Please check your inbox (and spam folder).</p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <AlertCircle className="w-5 h-5 shrink-0" />
+                            <div>
+                                <p className="font-bold">Failed to Send</p>
+                                <p className="text-xs opacity-90">{testResult.error}</p>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

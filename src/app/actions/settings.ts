@@ -65,3 +65,25 @@ export async function getSystemSettings() {
         return null;
     }
 }
+
+export async function testEmailConfiguration(to: string) {
+    try {
+        const emailModule = await import("@/lib/email");
+        const result = await emailModule.sendEmail({
+            to,
+            subject: "Test Email - Razib Marketing Employee Tool",
+            html: `
+                <div style="font-family: sans-serif; color: #333; padding: 20px;">
+                    <h1>Config Test Successful!</h1>
+                    <p>If you are reading this email, your email configuration is working correctly.</p>
+                    <p><strong>Provider:</strong> ${process.env.EMAIL_PROVIDER || 'Check Settings'}</p>
+                    <p>Time: ${new Date().toLocaleString()}</p>
+                </div>
+            `
+        });
+        return result;
+    } catch (error) {
+        console.error("Test email failed:", error);
+        return { success: false, error: error instanceof Error ? error.message : "Test email failed" };
+    }
+}
