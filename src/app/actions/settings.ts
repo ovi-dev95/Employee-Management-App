@@ -42,7 +42,7 @@ export async function updateSystemSettings(data: {
                 smtpFromEmail: data.smtpFromEmail,
                 emailProvider: data.emailProvider || "smtp",
                 brevoApiKey: data.brevoApiKey,
-                pointValues: data.pointValues || JSON.stringify({ login: 1, idea: 10, request: 5, sop: 20 })
+                pointValues: data.pointValues || JSON.stringify({ login: 1, idea: 10, request: 5, sop: 20, checkIn: 1, checkOut: 1 })
             },
         });
 

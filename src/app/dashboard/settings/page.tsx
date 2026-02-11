@@ -64,6 +64,8 @@ export default function SettingsPage() {
             smtpUser: settings.smtpUser,
             smtpPassword: settings.smtpPassword,
             smtpFromEmail: settings.smtpFromEmail,
+            emailProvider: settings.emailProvider,
+            brevoApiKey: settings.brevoApiKey,
             pointValues: JSON.stringify(settings.pointValues)
         })
 
@@ -947,7 +949,7 @@ function PointsSettings({ settings, updateField }: any) {
         updateField('pointValues', { ...settings.pointValues, [key]: val })
     }
 
-    const keys = ['login', 'idea', 'request', 'sop']
+    const keys = ['login', 'idea', 'request', 'sop', 'checkIn', 'checkOut']
 
     return (
         <div className="space-y-6">

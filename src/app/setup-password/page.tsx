@@ -50,7 +50,7 @@ export default async function SetupPasswordPage({
 
         const result = await setUserPassword(token, password)
         if (result.success) {
-            redirect("/login?success=Password set successfully. Please login.")
+            redirect("/dashboard")
         } else {
             redirect(`/setup-password?token=${token}&error=${result.error}`)
         }

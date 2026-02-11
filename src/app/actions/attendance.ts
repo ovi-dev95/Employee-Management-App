@@ -26,13 +26,33 @@ export async function checkIn() {
             return { error: "Already checked in today" }
         }
 
-        const attendance = await prisma.attendance.create({
-            data: {
-                userId: user.id,
-                checkIn: new Date(),
-                date: new Date()
-            }
-        })
+        const settings = await prisma.systemSettings.findUnique({ where: { id: "global" } })
+        const pointValues = settings?.pointValues ? JSON.parse(settings.pointValues) : { checkIn: 1 }
+        const checkInPoints = pointValues.checkIn || 0
+
+        const [attendance, _] = await prisma.$transaction([
+            prisma.attendance.create({
+                data: {
+                    userId: user.id,
+                    checkIn: new Date(),
+                    date: new Date()
+                }
+            }),
+            ...(checkInPoints > 0 ? [
+                prisma.user.update({
+                    where: { id: user.id },
+                    data: { points: { increment: checkInPoints } }
+                }),
+                prisma.activity.create({
+                    data: {
+                        userId: user.id,
+                        action: "Checked In",
+                        points: checkInPoints,
+                        category: "ATTENDANCE"
+                    }
+                })
+            ] : [])
+        ])
 
         revalidatePath("/dashboard/attendance")
         return { success: true, data: JSON.parse(JSON.stringify(attendance)) }
@@ -68,7 +88,12 @@ export async function checkOut() {
         const durationMs = checkOutTime.getTime() - new Date(attendance.checkIn).getTime()
         const durationMinutes = Math.floor(durationMs / 60000)
 
-        const points = durationMinutes >= 480 ? 10 : 0
+        const settings = await prisma.systemSettings.findUnique({ where: { id: "global" } })
+        const pointValues = settings?.pointValues ? JSON.parse(settings.pointValues) : { checkOut: 1 }
+        const checkOutPoints = pointValues.checkOut || 0
+
+        const workPoints = durationMinutes >= 480 ? 10 : 0
+        const totalPoints = checkOutPoints + workPoints
 
         const [updated, _] = await prisma.$transaction([
             prisma.attendance.update({
@@ -78,16 +103,16 @@ export async function checkOut() {
                     duration: durationMinutes
                 }
             }),
-            ...(points > 0 ? [
+            ...(totalPoints > 0 ? [
                 prisma.user.update({
                     where: { id: user.id },
-                    data: { points: { increment: points } }
+                    data: { points: { increment: totalPoints } }
                 }),
                 prisma.activity.create({
                     data: {
                         userId: user.id,
-                        action: "Completed 8 hours work",
-                        points: points,
+                        action: workPoints > 0 ? `Checked Out (+8h Bonus)` : "Checked Out",
+                        points: totalPoints,
                         category: "ATTENDANCE"
                     }
                 })
