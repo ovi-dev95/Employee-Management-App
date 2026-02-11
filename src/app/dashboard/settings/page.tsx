@@ -162,70 +162,129 @@ export default function SettingsPage() {
 function EmailSettings({ settings, updateField }: any) {
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Email Configuration (SMTP)</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Email Configuration</h2>
+
             <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900 rounded-2xl mb-6">
                 <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Configure your SMTP server to enable email notifications and user invitations.
+                    Configure your email provider to enable invitations and notifications.
                 </p>
             </div>
 
-            <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Host</label>
-                    <input
-                        type="text"
-                        value={settings.smtpHost || ''}
-                        onChange={(e) => updateField('smtpHost', e.target.value)}
-                        placeholder="smtp.gmail.com"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Port</label>
-                        <input
-                            type="number"
-                            value={settings.smtpPort || ''}
-                            onChange={(e) => updateField('smtpPort', parseInt(e.target.value))}
-                            placeholder="587"
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">From Email</label>
-                        <input
-                            type="email"
-                            value={settings.smtpFromEmail || ''}
-                            onChange={(e) => updateField('smtpFromEmail', e.target.value)}
-                            placeholder="noreply@company.com"
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
-                </div>
-
-                <div className="grid gap-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP User</label>
-                    <input
-                        type="text"
-                        value={settings.smtpUser || ''}
-                        onChange={(e) => updateField('smtpUser', e.target.value)}
-                        placeholder="user@example.com"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-
-                <div className="grid gap-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Password</label>
-                    <input
-                        type="password"
-                        value={settings.smtpPassword || ''}
-                        onChange={(e) => updateField('smtpPassword', e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+            <div className="grid gap-2 mb-6">
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Provider</label>
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+                    <button
+                        onClick={() => updateField('emailProvider', 'smtp')}
+                        className={cn("px-6 py-2 rounded-lg text-sm font-bold transition-all", settings.emailProvider !== 'brevo' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400")}
+                    >
+                        SMTP
+                    </button>
+                    <button
+                        onClick={() => updateField('emailProvider', 'brevo')}
+                        className={cn("px-6 py-2 rounded-lg text-sm font-bold transition-all", settings.emailProvider === 'brevo' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400")}
+                    >
+                        Brevo (Sendinblue)
+                    </button>
                 </div>
             </div>
+
+            {settings.emailProvider === 'brevo' ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Brevo API Key (v3)</label>
+                        <input
+                            type="password"
+                            value={settings.brevoApiKey || ''}
+                            onChange={(e) => updateField('brevoApiKey', e.target.value)}
+                            placeholder="xkeysib-..."
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                        <p className="text-xs text-slate-500">Get your API key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" className="text-blue-500 underline">Brevo Dashboard</a></p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sender Name</label>
+                            <input
+                                type="text"
+                                value={settings.smtpUser || ''} // Using smtpUser for sender name in Brevo Context or add new field? Let's check schema. Schema only has specific fields. Let's use smtpUser for Sender Name if confused, OR just use smtpFromEmail and extract name or assume hardcoded. 
+                                // Actually, Brevo API usually takes name separately. 
+                                // Schema has `smtpUser`. Let's assume `smtpUser` is Sender Name for Brevo mode to save schema migration.
+                                onChange={(e) => updateField('smtpUser', e.target.value)}
+                                placeholder="My Company"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sender Email</label>
+                            <input
+                                type="email"
+                                value={settings.smtpFromEmail || ''}
+                                onChange={(e) => updateField('smtpFromEmail', e.target.value)}
+                                placeholder="noreply@company.com"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="grid gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Host</label>
+                        <input
+                            type="text"
+                            value={settings.smtpHost || ''}
+                            onChange={(e) => updateField('smtpHost', e.target.value)}
+                            placeholder="smtp.gmail.com"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Port</label>
+                            <input
+                                type="number"
+                                value={settings.smtpPort || ''}
+                                onChange={(e) => updateField('smtpPort', parseInt(e.target.value))}
+                                placeholder="587"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">From Email</label>
+                            <input
+                                type="email"
+                                value={settings.smtpFromEmail || ''}
+                                onChange={(e) => updateField('smtpFromEmail', e.target.value)}
+                                placeholder="noreply@company.com"
+                                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP User</label>
+                        <input
+                            type="text"
+                            value={settings.smtpUser || ''}
+                            onChange={(e) => updateField('smtpUser', e.target.value)}
+                            placeholder="user@example.com"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">SMTP Password</label>
+                        <input
+                            type="password"
+                            value={settings.smtpPassword || ''}
+                            onChange={(e) => updateField('smtpPassword', e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

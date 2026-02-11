@@ -1,133 +1,95 @@
+import nodemailer from 'nodemailer';
+import { prisma } from "@/lib/prisma"
 
-import { prisma } from '@/lib/prisma'
-
-interface EmailOptions {
+type EmailOptions = {
     to: string;
     subject: string;
-    html: string;
-}
+    text?: string;
+    html?: string;
+};
 
-export async function sendEmail({ to, subject, html }: EmailOptions) {
+export async function sendEmail({ to, subject, text, html }: EmailOptions) {
     try {
         const settings = await prisma.systemSettings.findUnique({
             where: { id: "global" }
-        })
+        });
 
         if (!settings) {
-            return { success: false, error: "System settings not found" }
+            console.error("sendEmail: System settings not found, cannot send email.");
+            return { success: false, error: "Settings not configured" };
         }
 
-        const fromEmail = settings.smtpFromEmail || settings.smtpUser || "noreply@razibmarketing.net"
-        const fromName = "Razib Marketing Team"
+        const fromEmail = settings.smtpFromEmail || settings.smtpUser || 'noreply@razibmarketing.net';
+        const senderName = settings.smtpUser || 'Razib Marketing';
 
-        // 1. Check Provider
-        if (settings.emailProvider === 'brevo') {
-            return await sendViaBrevo({
-                to,
-                subject,
-                html,
-                apiKey: settings.brevoApiKey,
-                senderEmail: fromEmail,
-                senderName: fromName
-            })
-        }
+        if (settings.emailProvider === 'brevo' && settings.brevoApiKey) {
+            console.log("sendEmail: Using Brevo API v3");
 
-        // 2. Default to SMTP (nodemailer)
-        // We import dynamically to avoid build errors if nodemailer isn't installed in some environments
-        try {
-            const nodemailer = (await import('nodemailer')).default
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': settings.brevoApiKey,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: {
+                        name: senderName,
+                        email: fromEmail
+                    },
+                    to: [{
+                        email: to
+                    }],
+                    subject: subject,
+                    htmlContent: html || text // Brevo requires htmlContent for HTML emails
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("sendEmail: Brevo API Error", errorData);
+                return { success: false, error: `Brevo Error: ${errorData.message || response.statusText}` };
+            }
+
+            const data = await response.json();
+            console.log("sendEmail: Brevo Success", data);
+            return { success: true };
+
+        } else if (settings.emailProvider === 'smtp' || !settings.emailProvider) { // Default to SMTP if not set
+            console.log("sendEmail: Using SMTP");
 
             if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
-                console.warn("SMTP settings not configured.")
-                return { success: false, error: "SMTP settings missing" }
+                console.error("sendEmail: SMTP credentials missing");
+                return { success: false, error: "SMTP credentials missing" };
             }
 
             const transporter = nodemailer.createTransport({
                 host: settings.smtpHost,
                 port: settings.smtpPort || 587,
-                secure: settings.smtpPort === 465,
+                secure: settings.smtpPort === 465, // true for 465, false for other ports
                 auth: {
                     user: settings.smtpUser,
                     pass: settings.smtpPassword,
                 },
-            })
+            });
 
-            const info = await transporter.sendMail({
-                from: `"${fromName}" <${fromEmail}>`,
+            await transporter.sendMail({
+                from: `"${senderName}" <${fromEmail}>`,
                 to,
                 subject,
+                text,
                 html,
-            })
+            });
 
-            console.log("SMTP Email sent: %s", info.messageId)
-            return { success: true, messageId: info.messageId }
-
-        } catch (smtpError) {
-            console.error("SMTP Error:", smtpError)
-            return { success: false, error: "SMTP Failed. Check credentials or try Brevo." }
+            console.log("sendEmail: SMTP Success");
+            return { success: true };
+        } else {
+            console.error("sendEmail: Unknown or unconfigured email provider");
+            return { success: false, error: "Email provider not configured correctly" };
         }
 
     } catch (error) {
-        console.error("Error sending email:", error)
-        return { success: false, error: (error as Error).message }
-    }
-}
-
-async function sendViaBrevo({
-    to,
-    subject,
-    html,
-    apiKey,
-    senderEmail,
-    senderName
-}: {
-    to: string,
-    subject: string,
-    html: string,
-    apiKey?: string | null,
-    senderEmail: string,
-    senderName: string
-}) {
-    if (!apiKey) {
-        return { success: false, error: "Brevo API Key missing" }
-    }
-
-    try {
-        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-            method: "POST",
-            headers: {
-                "accept": "application/json",
-                "api-key": apiKey,
-                "content-type": "application/json"
-            },
-            body: JSON.stringify({
-                sender: {
-                    name: senderName,
-                    email: senderEmail
-                },
-                to: [
-                    {
-                        email: to,
-                        name: to // optional
-                    }
-                ],
-                subject: subject,
-                htmlContent: html
-            })
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            console.error("Brevo API Error:", errorData)
-            return { success: false, error: `Brevo Error: ${JSON.stringify(errorData)}` }
-        }
-
-        const data = await response.json()
-        console.log("Brevo Email sent:", data)
-        return { success: true, messageId: data.messageId }
-
-    } catch (error) {
-        console.error("Brevo Fetch Error:", error)
-        return { success: false, error: "Failed to connect to Brevo API" }
+        console.error("Failed to send email:", error);
+        return { success: false, error: error instanceof Error ? error.message : "Network error" };
     }
 }

@@ -68,13 +68,31 @@ export async function checkOut() {
         const durationMs = checkOutTime.getTime() - new Date(attendance.checkIn).getTime()
         const durationMinutes = Math.floor(durationMs / 60000)
 
-        const updated = await prisma.attendance.update({
-            where: { id: attendance.id },
-            data: {
-                checkOut: checkOutTime,
-                duration: durationMinutes
-            }
-        })
+        const points = durationMinutes >= 480 ? 10 : 0
+
+        const [updated, _] = await prisma.$transaction([
+            prisma.attendance.update({
+                where: { id: attendance.id },
+                data: {
+                    checkOut: checkOutTime,
+                    duration: durationMinutes
+                }
+            }),
+            ...(points > 0 ? [
+                prisma.user.update({
+                    where: { id: user.id },
+                    data: { points: { increment: points } }
+                }),
+                prisma.activity.create({
+                    data: {
+                        userId: user.id,
+                        action: "Completed 8 hours work",
+                        points: points,
+                        category: "ATTENDANCE"
+                    }
+                })
+            ] : [])
+        ])
 
         revalidatePath("/dashboard/attendance")
         return { success: true, data: JSON.parse(JSON.stringify(updated)) }

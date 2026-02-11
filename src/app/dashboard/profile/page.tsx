@@ -5,6 +5,7 @@ import { User2, Calendar, Mail, Building, LogOut, Award, Briefcase, Camera, Sett
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { getCurrentUser, updateUser } from '@/app/actions/user'
+import { logout } from '@/app/actions/auth'
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState('overview')
@@ -75,9 +76,8 @@ export default function ProfilePage() {
         }
     }
 
-    const handleSignOut = () => {
-        document.cookie = "auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"
-        window.location.href = '/login'
+    const handleSignOut = async () => {
+        await logout()
     }
 
     if (isLoading) {
