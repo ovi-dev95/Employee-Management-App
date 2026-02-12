@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { User2, Calendar, Mail, Building, LogOut, Award, Briefcase, Camera, Settings, Bell, Shield, PenSquare, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { getCurrentUser, updateUser } from '@/app/actions/user'
+import { getCurrentUser, updateUser, updatePassword } from '@/app/actions/user'
 import { logout } from '@/app/actions/auth'
 
 export default function ProfilePage() {
@@ -232,18 +232,19 @@ export default function ProfilePage() {
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent Activity</h3>
                                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800">
-                                        <ActivityItem
-                                            action="Submitted a Request"
-                                            target="Fix typo on Homepage"
-                                            date="2 hours ago"
-                                            points="+10"
-                                        />
-                                        <ActivityItem
-                                            action="Read SOP"
-                                            target="SEO Checklist for New Pages"
-                                            date="Yesterday"
-                                            points="+5"
-                                        />
+                                        {user.activities && user.activities.length > 0 ? (
+                                            user.activities.map((activity: any) => (
+                                                <ActivityItem
+                                                    key={activity.id}
+                                                    action={activity.action}
+                                                    target={activity.category || 'General'}
+                                                    date={new Date(activity.createdAt).toLocaleDateString()}
+                                                    points={activity.points > 0 ? `+${activity.points}` : activity.points}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="p-8 text-center text-slate-500">No recent activity</div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -331,17 +332,38 @@ export default function ProfilePage() {
                                 </h3>
 
                                 <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6">
-                                    <div className="space-y-4">
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault()
+                                        const form = e.target as HTMLFormElement
+                                        const current = (form.elements.namedItem('currentPassword') as HTMLInputElement).value
+                                        const next = (form.elements.namedItem('newPassword') as HTMLInputElement).value
+
+                                        if (!current || !next) return
+
+                                        setIsSaving(true)
+                                        const result = await updatePassword(user.id, current, next)
+                                        setIsSaving(false)
+
+                                        if (result.success) {
+                                            setShowSuccess(true)
+                                            setTimeout(() => setShowSuccess(false), 3000)
+                                            form.reset()
+                                        } else {
+                                            alert("Failed: " + result.error)
+                                        }
+                                    }} className="space-y-4">
                                         <div className="grid gap-2">
                                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</label>
-                                            <input type="password" placeholder="••••••••" className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                                            <input name="currentPassword" type="password" placeholder="••••••••" required className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
                                         </div>
                                         <div className="grid gap-2">
                                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">New Password</label>
-                                            <input type="password" placeholder="••••••••" className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
+                                            <input name="newPassword" type="password" placeholder="••••••••" required className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900" />
                                         </div>
-                                        <button className="px-6 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-sm font-bold">Update Password</button>
-                                    </div>
+                                        <button type="submit" disabled={isSaving} className="px-6 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-sm font-bold disabled:opacity-50">
+                                            {isSaving ? "Updating..." : "Update Password"}
+                                        </button>
+                                    </form>
 
                                     <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                                         <div>

@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { hash, compare } from "bcryptjs"
+import { cookies } from "next/headers"
 
 export async function getUsers() {
     try {
@@ -20,7 +22,7 @@ export async function getUsers() {
     }
 }
 
-import { cookies } from "next/headers"
+
 
 export async function getCurrentUser() {
     try {
@@ -34,7 +36,15 @@ export async function getCurrentUser() {
 
         console.log("getCurrentUser: Fetching for ID", userId);
         const user = await prisma.user.findUnique({
-            where: { id: userId }
+            where: { id: userId },
+            include: {
+                activities: {
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 5
+                }
+            }
         })
 
         if (!user) {
@@ -145,6 +155,27 @@ export async function createUser(data: {
     } catch (error) {
         console.error("Failed to create user:", error);
         return { success: false, error: error instanceof Error ? error.message : "Failed to create user" };
+    }
+}
+
+export async function updatePassword(userId: string, currentPassword: string, newPassword: string) {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return { success: false, error: "User not found" };
+
+        const isValid = await compare(currentPassword, user.password);
+        if (!isValid) return { success: false, error: "Incorrect current password" };
+
+        const hashedPassword = await hash(newPassword, 12);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update password:", error);
+        return { success: false, error: "Failed to update password" };
     }
 }
 
