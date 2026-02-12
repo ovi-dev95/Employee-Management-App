@@ -728,91 +728,92 @@ export default function UniversityPage() {
                         </motion.div>
                     </div>
                 )}
+            </AnimatePresence>
 
-                {/* Comment Modal */}
-                <AnimatePresence>
-                    {
-                        openCommentSop && (
-                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    onClick={() => setOpenCommentSop(null)}
-                                    className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
-                                />
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                    className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-0 overflow-hidden flex flex-col max-h-[85vh]"
-                                >
-                                    <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 z-10">
-                                        <div>
-                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">{openCommentSop.title}</h3>
-                                            <p className="text-xs text-slate-500">Discussion</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setOpenCommentSop(null)}
-                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
+            {/* Comment Modal */}
+            <AnimatePresence>
+                {
+                    openCommentSop && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setOpenCommentSop(null)}
+                                className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-0 overflow-hidden flex flex-col max-h-[85vh]"
+                            >
+                                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 z-10">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">{openCommentSop.title}</h3>
+                                        <p className="text-xs text-slate-500">Discussion</p>
                                     </div>
+                                    <button
+                                        onClick={() => setOpenCommentSop(null)}
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
 
-                                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                                        {openCommentSop.comments?.length > 0 ? (
-                                            openCommentSop.comments.map((comment: any) => (
-                                                <div key={comment.id} className="flex gap-4">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
-                                                        {comment.user?.avatar ? (
-                                                            <img src={comment.user.avatar} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            (comment.user?.name || '?').charAt(0)
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 space-y-1">
-                                                        <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl rounded-tl-none">
-                                                            <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{comment.user?.name || 'Unknown'}</p>
-                                                            <p className="text-sm text-slate-600 dark:text-slate-300">{comment.content}</p>
-                                                        </div>
-                                                        <p className="text-[10px] text-slate-400 pl-2">
-                                                            {new Date(comment.createdAt).toLocaleDateString()} • {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
+                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                    {openCommentSop.comments?.length > 0 ? (
+                                        openCommentSop.comments.map((comment: any) => (
+                                            <div key={comment.id} className="flex gap-4">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                                                    {comment.user?.avatar ? (
+                                                        <img src={comment.user.avatar} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        (comment.user?.name || '?').charAt(0)
+                                                    )}
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-10 text-slate-400">
-                                                <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                                                <p>No comments yet. Share your thoughts!</p>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl rounded-tl-none">
+                                                        <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{comment.user?.name || 'Unknown'}</p>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-300">{comment.content}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-400 pl-2">
+                                                        {new Date(comment.createdAt).toLocaleDateString()} • {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 text-slate-400">
+                                            <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                                            <p>No comments yet. Share your thoughts!</p>
+                                        </div>
+                                    )}
+                                </div>
 
-                                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
-                                        <form onSubmit={handleAddComment} className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Add a comment..."
-                                                value={commentText}
-                                                onChange={(e) => setCommentText(e.target.value)}
-                                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={!commentText.trim()}
-                                                className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                <Send className="w-5 h-5" />
-                                            </button>
-                                        </form>
-                                    </div>
-                                </motion.div>
-                            </div>
+                                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+                                    <form onSubmit={handleAddComment} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Add a comment..."
+                                            value={commentText}
+                                            onChange={(e) => setCommentText(e.target.value)}
+                                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!commentText.trim()}
+                                            className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <Send className="w-5 h-5" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </motion.div>
+                        </div>
 
-                        )}
-                </AnimatePresence>
+                    )}
+            </AnimatePresence>
         </div>
     )
 }
