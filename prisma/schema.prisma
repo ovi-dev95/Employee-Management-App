@@ -37,6 +37,8 @@ model User {
   meetings           Meeting[]    @relation("Host")
   requests           Request[]
   votes              Vote[]
+  sopLikes           SOPLike[]
+  comments           Comment[]
 }
 
 model SystemSettings {
@@ -98,6 +100,8 @@ model SOP {
   views     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  likes     SOPLike[]
+  comments  Comment[]
 }
 
 model Idea {
@@ -111,6 +115,7 @@ model Idea {
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [submittedBy], references: [id])
   votes       Vote[]
+  comments    Comment[]
 }
 
 model Vote {
@@ -121,6 +126,33 @@ model Vote {
   user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, ideaId])
+}
+
+model SOPLike {
+  id        String   @id @default(uuid())
+  userId    String
+  sopId     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  sop       SOP      @relation(fields: [sopId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sopId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  sopId     String?
+  sop       SOP?     @relation(fields: [sopId], references: [id], onDelete: Cascade)
+  
+  ideaId    String?
+  idea      Idea?    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Meeting {

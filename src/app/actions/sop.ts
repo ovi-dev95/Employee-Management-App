@@ -6,6 +6,22 @@ import { revalidatePath } from "next/cache"
 export async function getSOPs() {
     try {
         const sops = await prisma.sOP.findMany({
+            include: {
+                likes: true,
+                comments: {
+                    include: {
+                        user: {
+                            select: {
+                                name: true,
+                                avatar: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                }
+            },
             orderBy: {
                 createdAt: 'desc'
             }
@@ -121,5 +137,37 @@ export async function deleteSOP(id: string) {
     } catch (error) {
         console.error("Failed to delete SOP:", error);
         return { success: false, error: "Failed to delete SOP" };
+    }
+}
+
+export async function toggleSOPLike(sopId: string, userId: string) {
+    try {
+        const existingLike = await prisma.sOPLike.findUnique({
+            where: {
+                userId_sopId: {
+                    userId,
+                    sopId
+                }
+            }
+        });
+
+        if (existingLike) {
+            await prisma.sOPLike.delete({
+                where: { id: existingLike.id }
+            });
+        } else {
+            await prisma.sOPLike.create({
+                data: {
+                    userId,
+                    sopId
+                }
+            });
+        }
+
+        revalidatePath("/dashboard/university");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle SOP like:", error);
+        return { success: false, error: "Failed to toggle like" };
     }
 }

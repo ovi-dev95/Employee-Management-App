@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { PlayCircle, FileText, Search, CheckSquare, Plus, X, Trash2, Eye, Clock } from 'lucide-react'
+import { PlayCircle, FileText, Search, CheckSquare, Plus, X, Trash2, Eye, Clock, Heart, MessageSquare, Send } from 'lucide-react'
 import { ActivityLog } from '@/components/dashboard/activity-log'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { getSOPs, createSOP, deleteSOP, updateSOP, incrementSOPViews } from '@/app/actions/sop'
+import { getSOPs, createSOP, deleteSOP, updateSOP, incrementSOPViews, toggleSOPLike } from '@/app/actions/sop'
+import { addComment } from '@/app/actions/comment'
 import { getCurrentUser } from '@/app/actions/user'
 
 const categories = ['ALL', 'WEB_DEV', 'SEO', 'PAID_MEDIA', 'GENERAL']
@@ -26,6 +27,8 @@ export default function UniversityPage() {
     })
     const [editingSop, setEditingSop] = useState<any>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [openCommentSop, setOpenCommentSop] = useState<any>(null)
+    const [commentText, setCommentText] = useState('')
 
     const [currentUser, setCurrentUser] = useState<any>(null)
 
@@ -93,6 +96,73 @@ export default function UniversityPage() {
             alert('Failed to add SOP: ' + result.error)
         }
         setIsSubmitting(false)
+    }
+
+
+
+    const handleLike = async (e: React.MouseEvent, sop: any) => {
+        e.stopPropagation()
+        if (!currentUser) return
+
+        // Optimistic update
+        const isLiked = sop.likes?.some((l: any) => l.userId === currentUser.id)
+        const newSops = sops.map(s => {
+            if (s.id === sop.id) {
+                return {
+                    ...s,
+                    likes: isLiked
+                        ? s.likes.filter((l: any) => l.userId !== currentUser.id)
+                        : [...(s.likes || []), { userId: currentUser.id }]
+                }
+            }
+            return s
+        })
+        setSops(newSops)
+        if (openCommentSop?.id === sop.id) {
+            setOpenCommentSop(newSops.find(s => s.id === sop.id))
+        }
+
+        const result = await toggleSOPLike(sop.id, currentUser.id)
+        if (!result.success) {
+            fetchSops() // Revert on failure
+        }
+    }
+
+    const handleAddComment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!currentUser || !openCommentSop || !commentText.trim()) return
+
+        const tempComment = {
+            id: 'temp-' + Date.now(),
+            content: commentText,
+            createdAt: new Date().toISOString(),
+            user: {
+                name: currentUser.name,
+                avatar: currentUser.avatar
+            }
+        }
+
+        // Optimistic update
+        const updatedSop = {
+            ...openCommentSop,
+            comments: [tempComment, ...(openCommentSop.comments || [])]
+        }
+        setOpenCommentSop(updatedSop)
+        setSops(sops.map(s => s.id === openCommentSop.id ? updatedSop : s))
+        setCommentText('')
+
+        const result = await addComment({
+            entityId: openCommentSop.id,
+            entityType: 'SOP',
+            content: tempComment.content,
+            userId: currentUser.id
+        })
+
+        if (result.success) {
+            fetchSops() // Refresh to get real ID and consistent state
+        } else {
+            alert("Failed to add comment")
+        }
     }
 
     const handleEditSop = async (e: React.FormEvent) => {
@@ -252,8 +322,34 @@ export default function UniversityPage() {
                                         <h3 className="font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-blue-500 transition-colors">
                                             {sop.title}
                                         </h3>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 truncate mb-4">
                                             <CheckSquare className="w-3 h-3 shrink-0" /> {sop.content.substring(0, 50)}...
+                                        </div>
+
+                                        <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                                            <button
+                                                onClick={(e) => handleLike(e, sop)}
+                                                className={cn(
+                                                    "flex items-center gap-1.5 text-xs font-medium transition-colors p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800",
+                                                    sop.likes?.some((l: any) => l.userId === currentUser?.id)
+                                                        ? "text-red-500"
+                                                        : "text-slate-500 hover:text-red-500"
+                                                )}
+                                            >
+                                                <Heart className={cn("w-4 h-4 transition-transform active:scale-95", sop.likes?.some((l: any) => l.userId === currentUser?.id) && "fill-current")} />
+                                                <span>{sop.likes?.length || 0}</span>
+                                            </button>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenCommentSop(sop);
+                                                }}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-500 transition-colors p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            >
+                                                <MessageSquare className="w-4 h-4" />
+                                                <span>{sop.comments?.length || 0} Comments</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </motion.div>

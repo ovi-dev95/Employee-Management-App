@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { ThumbsUp, MessageSquare, Plus, Rocket, Eye, Trash2, Clock } from 'lucide-react'
+import { ThumbsUp, MessageSquare, Plus, Rocket, Eye, Trash2, Clock, X, Send } from 'lucide-react'
 import { ActivityLog } from '@/components/dashboard/activity-log'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { cn } from '@/lib/utils'
 import { getIdeas, createIdea, updateIdea, deleteIdea, toggleVote } from '@/app/actions/idea'
+import { addComment } from '@/app/actions/comment'
 import { getCurrentUser } from '@/app/actions/user'
 
 const ideaSchema = z.object({
@@ -38,6 +39,8 @@ export default function ProductLabPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'NEW' | 'MY_IDEAS' | 'ALL_IDEAS'>('NEW')
     const [isSubmitted, setIsSubmitted] = useState(false)
+    const [openCommentIdea, setOpenCommentIdea] = useState<any>(null)
+    const [commentText, setCommentText] = useState('')
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<IdeaFormData>({
         resolver: zodResolver(ideaSchema),
@@ -84,6 +87,43 @@ export default function ProductLabPage() {
         const result = await toggleVote(ideaId, currentUser.id)
         if (result.success) {
             fetchData()
+        }
+    }
+
+    const handleAddComment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!currentUser || !openCommentIdea || !commentText.trim()) return
+
+        const tempComment = {
+            id: 'temp-' + Date.now(),
+            content: commentText,
+            createdAt: new Date().toISOString(),
+            user: {
+                name: currentUser.name,
+                avatar: currentUser.avatar
+            }
+        }
+
+        // Optimistic update
+        const updatedIdea = {
+            ...openCommentIdea,
+            comments: [tempComment, ...(openCommentIdea.comments || [])]
+        }
+        setOpenCommentIdea(updatedIdea)
+        setIdeas(ideas.map(i => i.id === openCommentIdea.id ? updatedIdea : i))
+        setCommentText('')
+
+        const result = await addComment({
+            entityId: openCommentIdea.id,
+            entityType: 'IDEA',
+            content: tempComment.content,
+            userId: currentUser.id
+        })
+
+        if (result.success) {
+            fetchData()
+        } else {
+            alert("Failed to add comment")
         }
     }
 
@@ -260,10 +300,14 @@ export default function ProductLabPage() {
                                                 )} />
                                                 <span className="font-medium">{idea.upvotes}</span>
                                             </button>
-                                            <div className="flex items-center gap-2 text-slate-400">
+
+                                            <button
+                                                onClick={() => setOpenCommentIdea(idea)}
+                                                className="flex items-center gap-2 text-slate-400 hover:text-blue-500 transition-colors"
+                                            >
                                                 <MessageSquare className="w-4 h-4" />
-                                                <span className="text-xs">0</span>
-                                            </div>
+                                                <span className="text-xs">{idea.comments?.length || 0}</span>
+                                            </button>
                                         </div>
                                     </motion.div>
                                 ))
@@ -281,7 +325,93 @@ export default function ProductLabPage() {
                     </div>
                 </aside>
             </div>
-        </div>
+
+
+            {/* Comment Modal */}
+            <AnimatePresence>
+                {
+                    openCommentIdea && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setOpenCommentIdea(null)}
+                                className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-0 overflow-hidden flex flex-col max-h-[85vh]"
+                            >
+                                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 z-10">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">{openCommentIdea.title}</h3>
+                                        <p className="text-xs text-slate-500">Discussion</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setOpenCommentIdea(null)}
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                    {openCommentIdea.comments?.length > 0 ? (
+                                        openCommentIdea.comments.map((comment: any) => (
+                                            <div key={comment.id} className="flex gap-4">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden">
+                                                    {comment.user?.avatar ? (
+                                                        <img src={comment.user.avatar} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        (comment.user?.name || '?').charAt(0)
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl rounded-tl-none">
+                                                        <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{comment.user?.name || 'Unknown'}</p>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-300">{comment.content}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-400 pl-2">
+                                                        {new Date(comment.createdAt).toLocaleDateString()} • {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 text-slate-400">
+                                            <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                                            <p>No comments yet. Share your thoughts!</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+                                    <form onSubmit={handleAddComment} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Add a comment..."
+                                            value={commentText}
+                                            onChange={(e) => setCommentText(e.target.value)}
+                                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!commentText.trim()}
+                                            className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <Send className="w-5 h-5" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )
+                }
+            </AnimatePresence >
+        </div >
     )
 }
 

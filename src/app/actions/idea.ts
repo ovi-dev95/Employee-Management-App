@@ -13,7 +13,20 @@ export async function getIdeas() {
                         avatar: true
                     }
                 },
-                votes: true
+                votes: true,
+                comments: {
+                    include: {
+                        user: {
+                            select: {
+                                name: true,
+                                avatar: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc'
