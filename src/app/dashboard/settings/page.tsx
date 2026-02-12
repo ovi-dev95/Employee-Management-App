@@ -858,6 +858,26 @@ function IntegrationSettings({ settings, updateField }: any) {
 }
 
 function LeaveManagementSettings({ settings, updateField }: any) {
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+    const [newHoliday, setNewHoliday] = useState('')
+
+    const handleAddHoliday = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newHoliday.trim()) return
+
+        const currentHolidays = settings.yearlyLeaveDates ? settings.yearlyLeaveDates.split(',').map((h: string) => h.trim()).filter(Boolean) : []
+        const updatedHolidays = [...currentHolidays, newHoliday.trim()].join(', ')
+        updateField('yearlyLeaveDates', updatedHolidays)
+        setNewHoliday('')
+        setIsAddModalOpen(false)
+    }
+
+    const handleDeleteHoliday = (indexToRemove: number) => {
+        const currentHolidays = settings.yearlyLeaveDates ? settings.yearlyLeaveDates.split(',').map((h: string) => h.trim()).filter(Boolean) : []
+        const updatedHolidays = currentHolidays.filter((_: string, i: number) => i !== indexToRemove).join(', ')
+        updateField('yearlyLeaveDates', updatedHolidays)
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="flex justify-between items-center">
@@ -907,12 +927,18 @@ function LeaveManagementSettings({ settings, updateField }: any) {
                                 className="px-4 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-3 shadow-sm hover:border-indigo-300 transition-colors"
                             >
                                 {date.trim()}
-                                <button className="text-slate-300 hover:text-red-500 transition-colors">
+                                <button
+                                    onClick={() => handleDeleteHoliday(i)}
+                                    className="text-slate-300 hover:text-red-500 transition-colors"
+                                >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                             </motion.span>
                         ))}
-                        <button className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20">
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+                        >
                             + Add Custom Date
                         </button>
                     </div>
@@ -922,6 +948,57 @@ function LeaveManagementSettings({ settings, updateField }: any) {
                     </div>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {isAddModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsAddModalOpen(false)}
+                            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6"
+                        >
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Holiday</h3>
+                            <form onSubmit={handleAddHoliday} className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Holiday Name & Date</label>
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="e.g. Dec 25 - Christmas"
+                                        value={newHoliday}
+                                        onChange={(e) => setNewHoliday(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddModalOpen(false)}
+                                        className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={!newHoliday.trim()}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                    >
+                                        Add Holiday
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
