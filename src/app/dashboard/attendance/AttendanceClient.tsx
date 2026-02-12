@@ -313,7 +313,7 @@ function TeamOverview({ data }: any) {
                 </div>
             </div>
 
-            <div className="glass-card rounded-2xl overflow-hidden">
+            <div className="glass-card rounded-2xl overflow-x-auto">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50/50 dark:bg-slate-800/50 text-xs font-semibold text-slate-500 uppercase border-b border-slate-200 dark:border-slate-800">
                         <tr>

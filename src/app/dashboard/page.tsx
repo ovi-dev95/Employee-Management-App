@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     const checkInTime = todaysRecord ? todaysRecord.checkIn : null
 
     return (
-        <div className="p-8 space-y-8 h-full overflow-y-auto">
+        <div className="p-4 md:p-8 space-y-8 h-full">
             <header className="flex justify-between items-center animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">The Pulse</h1>
