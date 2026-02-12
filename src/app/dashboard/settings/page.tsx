@@ -347,7 +347,7 @@ function TabButton({ active, onClick, icon: Icon, children }: any) {
         <button
             onClick={onClick}
             className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium whitespace-nowrap shrink-0",
+                "w-auto md:w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium whitespace-nowrap shrink-0",
                 active
                     ? "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 shadow-sm"
                     : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
