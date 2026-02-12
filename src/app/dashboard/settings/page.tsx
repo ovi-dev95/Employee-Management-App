@@ -391,7 +391,8 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
         name: '',
         email: '',
         role: 'SUBSCRIBER',
-        department: 'WEB'
+        department: 'WEB',
+        password: ''
     })
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -428,11 +429,11 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
             console.log("handleInvite: Create user result", result);
             if (result.success) {
                 if (result.warning) {
-                    alert('User created, but email failed to send: ' + result.warning);
+                    alert('User created, but email failed to send: ' + result.warning + '\n\nPlease safely store the password if provided: ' + inviteData.password);
                 }
                 console.log("handleInvite: Success! Refreshing list.");
                 setIsInviteModalOpen(false)
-                setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB' })
+                setInviteData({ name: '', email: '', role: 'SUBSCRIBER', department: 'WEB', password: '' })
                 await onRefresh()
             } else {
                 console.error("handleInvite: Failed", result.error);
@@ -657,6 +658,18 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                                             <option value="PAID_MEDIA">PAID MEDIA</option>
                                         </select>
                                     </div>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Initial Password (Optional)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Leave empty for email invite setup"
+                                        value={inviteData.password}
+                                        onChange={(e) => setInviteData({ ...inviteData, password: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    />
+                                    <p className="text-[10px] text-slate-500">If email delivery fails, you can provide this password to the user manually.</p>
                                 </div>
 
                                 <div className="flex justify-end gap-3 pt-4">

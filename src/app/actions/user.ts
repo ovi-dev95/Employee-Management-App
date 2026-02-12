@@ -103,6 +103,7 @@ export async function createUser(data: {
     email: string;
     role: string;
     department: string;
+    password?: string;
 }) {
     try {
         console.log("createUser: Creating user", data.email);
@@ -116,10 +117,15 @@ export async function createUser(data: {
         const inviteToken = crypto.randomUUID();
         const inviteTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+        const hashedPassword = data.password ? await hash(data.password, 12) : "setup-required";
+
         const user = await prisma.user.create({
             data: {
-                ...data,
-                password: "setup-required",
+                name: data.name,
+                email: data.email,
+                role: data.role,
+                department: data.department,
+                password: hashedPassword,
                 inviteToken,
                 inviteTokenExpiry
             },
@@ -128,27 +134,31 @@ export async function createUser(data: {
         // Send Email
         const setupLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/setup-password?token=${inviteToken}`;
 
-        const emailModule = await import("@/lib/email");
-        const emailResult = await emailModule.sendEmail({
-            to: user.email,
-            subject: "Welcome to Razib Marketing - Set up your account",
-            html: `
-                <div style="font-family: sans-serif; color: #333;">
-                    <h1>Welcome, ${user.name}!</h1>
-                    <p>You have been invited to join the Razib Marketing Employee Management Tool.</p>
-                    <p>Please click the link below to set up your password and access your account:</p>
-                    <a href="${setupLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Set Up Account</a>
-                    <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
-                </div>
-            `
-        });
-
-        if (!emailResult.success) {
-            console.error("createUser: Failed to send email", emailResult.error);
-            // Optional: Delete user if email fails so they can try again?
-            // await prisma.user.delete({ where: { id: user.id } });
-            // return { success: false, error: "User created but email failed: " + emailResult.error };
-            return { success: true, user: JSON.parse(JSON.stringify(user)), warning: "User created, but email failed to send: " + emailResult.error };
+        try {
+            const emailModule = await import("@/lib/email");
+            const emailResult = await emailModule.sendEmail({
+                to: user.email,
+                subject: "Welcome to Razib Marketing - Set up your account",
+                html: `
+                    <div style="font-family: sans-serif; color: #333;">
+                        <h1>Welcome, ${user.name}!</h1>
+                        <p>You have been invited to join the Razib Marketing Employee Management Tool.</p>
+                        ${data.password
+                        ? `<p>Your account has been created with a temporary password: <strong>${data.password}</strong></p><p>Please start using the dashboard.</p>`
+                        : `<p>Please click the link below to set up your password and access your account:</p>
+                               <a href="${setupLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Set Up Account</a>`
+                    }
+                        <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
+                    </div>
+                `
+            });
+            if (!emailResult.success) {
+                console.error("createUser: Failed to send email", emailResult.error);
+                return { success: true, user: JSON.parse(JSON.stringify(user)), warning: "User created, but email failed to send: " + emailResult.error };
+            }
+        } catch (emailError) {
+            console.error("createUser: Email module error", emailError);
+            // Don't fail the user creation if email fails
         }
 
         revalidatePath("/dashboard/settings");
