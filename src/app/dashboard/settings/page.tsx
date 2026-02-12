@@ -743,12 +743,40 @@ function NotificationSettings() {
 }
 
 function BillingSettings() {
+    const [cards, setCards] = useState([
+        { id: '1', brand: 'Visa', last4: '4242', exp: '12/28', isPrimary: true }
+    ])
+    const [isAddCardOpen, setIsAddCardOpen] = useState(false)
+    const [newCard, setNewCard] = useState({ number: '', exp: '', cvc: '' })
+
+    const handleAddCard = (e: React.FormEvent) => {
+        e.preventDefault()
+        // Mock validation
+        if (newCard.number.length < 16) return
+
+        setCards([...cards, {
+            id: Date.now().toString(),
+            brand: 'MasterCard', // Mock
+            last4: newCard.number.slice(-4),
+            exp: newCard.exp,
+            isPrimary: cards.length === 0
+        }])
+        setIsAddCardOpen(false)
+        setNewCard({ number: '', exp: '', cvc: '' })
+    }
+
+    const removeCard = (id: string) => {
+        if (confirm('Remove this payment method?')) {
+            setCards(cards.filter(c => c.id !== id))
+        }
+    }
+
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Billing & Plan</h2>
             <div className="p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl text-white shadow-2xl shadow-blue-500/20 overflow-hidden relative">
                 <div className="relative z-10">
-                    <h3 className="text-2xl font-black mb-1">Nexus Pro Plan</h3>
+                    <h3 className="text-2xl font-black mb-1">RM Enterprise Plan</h3>
                     <p className="opacity-80 text-sm mb-6 flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4" /> Active until Dec 31, 2026
                     </p>
@@ -756,24 +784,121 @@ function BillingSettings() {
                 </div>
                 <CreditCard className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 rotate-12" />
             </div>
+
             <div className="mt-8">
-                <h3 className="font-bold mb-4 text-slate-900 dark:text-white text-sm uppercase tracking-widest">Saved Payment Method</h3>
-                <div className="flex items-center gap-4 p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl">
-                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center">
-                        <CreditCard className="w-6 h-6 text-slate-500" />
-                    </div>
-                    <div>
-                        <p className="font-black text-slate-900 dark:text-white">Visa ending in 4242</p>
-                        <p className="text-xs text-slate-500 font-medium">Expires 12/28 • Primary</p>
-                    </div>
-                    <button className="ml-auto text-xs font-black text-blue-600 uppercase tracking-widest hover:underline">Update</button>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-widest">Payment Methods</h3>
+                    <button
+                        onClick={() => setIsAddCardOpen(true)}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    >
+                        <Plus className="w-3 h-3" /> Add Method
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    {cards.map(card => (
+                        <div key={card.id} className="flex items-center gap-4 p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl group">
+                            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center">
+                                <CreditCard className="w-6 h-6 text-slate-500" />
+                            </div>
+                            <div>
+                                <p className="font-black text-slate-900 dark:text-white">{card.brand} ending in {card.last4}</p>
+                                <p className="text-xs text-slate-500 font-medium">Expires {card.exp} {card.isPrimary && '• Primary'}</p>
+                            </div>
+                            <button
+                                onClick={() => removeCard(card.id)}
+                                className="ml-auto p-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                    {cards.length === 0 && (
+                        <p className="text-sm text-slate-500 italic">No payment methods added.</p>
+                    )}
                 </div>
             </div>
+
+            <AnimatePresence>
+                {isAddCardOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsAddCardOpen(false)}
+                            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl"
+                        >
+                            <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Add Card</h3>
+                            <form onSubmit={handleAddCard} className="space-y-4">
+                                <input
+                                    required
+                                    placeholder="Card Number"
+                                    maxLength={19}
+                                    value={newCard.number}
+                                    onChange={e => setNewCard({ ...newCard, number: e.target.value })}
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 outline-none"
+                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        required
+                                        placeholder="MM/YY"
+                                        maxLength={5}
+                                        value={newCard.exp}
+                                        onChange={e => setNewCard({ ...newCard, exp: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 outline-none"
+                                    />
+                                    <input
+                                        required
+                                        placeholder="CVC"
+                                        maxLength={3}
+                                        value={newCard.cvc}
+                                        onChange={e => setNewCard({ ...newCard, cvc: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 outline-none"
+                                    />
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-xl font-bold">Add Card</button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
 
 function DataExportSettings() {
+    const handleExport = () => {
+        const dummyData = {
+            users: [
+                { id: '1', name: 'John Doe', role: 'ADMIN' },
+                { id: '2', name: 'Jane Smith', role: 'EDITOR' }
+            ],
+            attendance: [
+                { id: '101', date: '2023-10-01', status: 'PRESENT' }
+            ],
+            settings: {
+                orgName: 'MNC'
+            },
+            timestamp: new Date().toISOString()
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dummyData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "organization_backup_" + new Date().toISOString().split('T')[0] + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Data Management</h2>
@@ -783,15 +908,21 @@ function DataExportSettings() {
                         <h3 className="font-bold text-slate-900 dark:text-white mb-1">Export Full Organization Data</h3>
                         <p className="text-xs text-slate-500">Includes attendance records, employee profiles, and system logs.</p>
                     </div>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-white transition-all">
-                        <Download className="w-4 h-4" /> Export (.csv)
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-white transition-all shadow-md"
+                    >
+                        <Download className="w-4 h-4" /> Export (.json)
                     </button>
                 </div>
             </div>
             <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
                 <h3 className="text-red-600 dark:text-red-400 font-bold mb-1 uppercase text-xs tracking-widest">Danger Zone</h3>
                 <p className="text-sm text-slate-500 mt-2 mb-4 italic">Permanently remove this workspace and all associated employee data. This action is irreversible.</p>
-                <button className="flex items-center gap-2 text-xs font-black text-red-600 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 px-5 py-2.5 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm">
+                <button
+                    onClick={() => alert("This feature is disabled for safety reasons.")}
+                    className="flex items-center gap-2 text-xs font-black text-red-600 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 px-5 py-2.5 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
                     <Trash2 className="w-4 h-4" /> Delete Organization Workspace
                 </button>
             </div>
@@ -800,6 +931,19 @@ function DataExportSettings() {
 }
 
 function IntegrationSettings({ settings, updateField }: any) {
+    const [uploadStatus, setUploadStatus] = useState('')
+
+    const handleZKTecoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setUploadStatus('Uploading...')
+            // Mock upload process
+            setTimeout(() => {
+                setUploadStatus('File uploaded successfully! Processing in background.')
+            }, 1500)
+        }
+    }
+
     return (
         <div className="space-y-8">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Connected Integrations</h2>
@@ -811,9 +955,21 @@ function IntegrationSettings({ settings, updateField }: any) {
                     </div>
                     <div className="flex-1">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">RM Biometric Punch Machine</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 leading-relaxed max-w-lg">Connect your physical attendance hardware. Supports ZKTeco, Hikvision, and Anviz devices via the cloud API.</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 leading-relaxed max-w-lg mb-4">Connect your physical attendance hardware. Supports ZKTeco, Hikvision, and Anviz devices via the cloud API.</p>
 
-                        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 mb-6">
+                            <h4 className="font-bold text-sm mb-2">Upload Data Manually via USB</h4>
+                            <p className="text-xs text-slate-500 mb-3">If the cloud connection is unstable, you can upload the .dat or .xml file exported from your device.</p>
+                            <input
+                                type="file"
+                                accept=".dat,.xml,.csv,.txt"
+                                onChange={handleZKTecoUpload}
+                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            {uploadStatus && <p className="text-xs text-emerald-500 font-bold mt-2">{uploadStatus}</p>}
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Device IP / Endpoint</label>
                                 <input type="text" placeholder="192.168.1.201" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all" />
@@ -824,7 +980,7 @@ function IntegrationSettings({ settings, updateField }: any) {
                             </div>
                         </div>
                         <button className="mt-6 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:shadow-xl transition-all active:scale-95">
-                            Connect Hardware
+                            Check Cloud Connection
                         </button>
                     </div>
                 </div>
