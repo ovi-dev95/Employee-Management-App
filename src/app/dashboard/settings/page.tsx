@@ -129,7 +129,7 @@ export default function SettingsPage() {
     if (!currentUser) return null; // Or loading state
 
     return (
-        <div className="p-8 max-w-5xl mx-auto space-y-8 relative">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 relative">
             <AnimatePresence>
                 {showSuccess && (
                     <motion.div
@@ -149,7 +149,7 @@ export default function SettingsPage() {
 
             <header className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Settings</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Settings</h1>
                     <p className="text-slate-500 dark:text-slate-400">Manage your organization and platform preferences.</p>
                 </div>
                 {isAdmin && (
@@ -171,7 +171,7 @@ export default function SettingsPage() {
 
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Sidebar Navigation */}
-                <nav className="w-full md:w-64 flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 scrollbar-hide shrink-0">
+                <nav className="w-full md:w-64 flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide shrink-0">
                     {canManageGeneral && <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={Globe}>General</TabButton>}
                     {canManageTeam && <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users}>Team Members</TabButton>}
                     <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={Shield}>Security</TabButton>
@@ -222,7 +222,7 @@ function EmailSettings({ settings, updateField }: any) {
 
             <div className="grid gap-2 mb-6">
                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Provider</label>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+                <div className="flex flex-wrap bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-fit">
                     <button
                         onClick={() => updateField('emailProvider', 'smtp')}
                         className={cn("px-6 py-2 rounded-lg text-sm font-bold transition-all", settings.emailProvider !== 'brevo' ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400")}
@@ -251,7 +251,7 @@ function EmailSettings({ settings, updateField }: any) {
                         />
                         <p className="text-xs text-slate-500">Get your API key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" className="text-blue-500 underline">Brevo Dashboard</a></p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sender Name</label>
                             <input
@@ -287,7 +287,7 @@ function EmailSettings({ settings, updateField }: any) {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Port</label>
                             <input
@@ -399,7 +399,7 @@ function GeneralSettings({ settings, updateField }: any) {
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                     <Clock className="w-5 h-5 text-blue-500" /> Attendance Schedule
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="grid gap-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Standard Check-In Time</label>
                         <div className="flex items-center gap-2">
@@ -640,7 +640,7 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-8 overflow-hidden"
+                            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 overflow-hidden max-h-[90vh] overflow-y-auto"
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
@@ -680,7 +680,7 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="grid gap-2">
                                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</label>
                                         <select
