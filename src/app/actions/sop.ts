@@ -27,9 +27,12 @@ export async function createSOP(data: {
     userId?: string; // Optional for logging
 }) {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { userId, ...sopData } = data;
+
         const sop = await prisma.sOP.create({
             data: {
-                ...data,
+                ...sopData,
                 views: 0
             }
         });
@@ -67,9 +70,12 @@ export async function updateSOP(id: string, data: {
     userId?: string;
 }) {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { userId, ...sopUpdateData } = data;
+
         const sop = await prisma.sOP.update({
             where: { id },
-            data
+            data: sopUpdateData
         });
 
         if (data.userId) {
