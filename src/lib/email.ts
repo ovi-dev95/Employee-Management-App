@@ -19,7 +19,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
             return { success: false, error: "Settings not configured" };
         }
 
-        const fromEmail = settings.smtpFromEmail || settings.smtpUser || 'noreply@razibmarketing.net';
+        const fromEmail = settings.smtpFromEmail || 'noreply@razibmarketing.com';
         const senderName = settings.smtpUser || 'Razib Marketing';
 
         if (settings.emailProvider === 'brevo') {
