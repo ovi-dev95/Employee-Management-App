@@ -14,6 +14,7 @@ export async function getIdeas() {
                     }
                 },
                 votes: true,
+                dislikes: true,
                 comments: {
                     include: {
                         user: {
@@ -109,32 +110,29 @@ export async function deleteIdea(id: string) {
     }
 }
 
-export async function toggleVote(ideaId: string, userId: string) {
+export async function toggleIdeaLike(ideaId: string, userId: string) {
     try {
         const existingVote = await prisma.vote.findUnique({
-            where: {
-                userId_ideaId: {
-                    userId,
-                    ideaId
-                }
-            }
+            where: { userId_ideaId: { userId, ideaId } }
         });
 
+        const existingDislike = await prisma.ideaDislike.findUnique({
+            where: { userId_ideaId: { userId, ideaId } }
+        });
+
+        // Remove dislike if exists
+        if (existingDislike) {
+            await prisma.ideaDislike.delete({ where: { id: existingDislike.id } });
+        }
+
         if (existingVote) {
-            await prisma.vote.delete({
-                where: { id: existingVote.id }
-            });
+            await prisma.vote.delete({ where: { id: existingVote.id } });
             await prisma.idea.update({
                 where: { id: ideaId },
                 data: { upvotes: { decrement: 1 } }
             });
         } else {
-            await prisma.vote.create({
-                data: {
-                    userId,
-                    ideaId
-                }
-            });
+            await prisma.vote.create({ data: { userId, ideaId } });
             await prisma.idea.update({
                 where: { id: ideaId },
                 data: { upvotes: { increment: 1 } }
@@ -144,7 +142,41 @@ export async function toggleVote(ideaId: string, userId: string) {
         revalidatePath("/dashboard/product-lab");
         return { success: true };
     } catch (error) {
-        console.error("Failed to toggle vote:", error);
-        return { success: false, error: "Failed to vote" };
+        console.error("Failed to toggle idea like:", error);
+        return { success: false, error: "Failed to toggle like" };
+    }
+}
+export const toggleVote = toggleIdeaLike; // Alias for backward compatibility
+
+export async function toggleIdeaDislike(ideaId: string, userId: string) {
+    try {
+        const existingDislike = await prisma.ideaDislike.findUnique({
+            where: { userId_ideaId: { userId, ideaId } }
+        });
+
+        const existingVote = await prisma.vote.findUnique({
+            where: { userId_ideaId: { userId, ideaId } }
+        });
+
+        // Remove like (vote) if exists
+        if (existingVote) {
+            await prisma.vote.delete({ where: { id: existingVote.id } });
+            await prisma.idea.update({
+                where: { id: ideaId },
+                data: { upvotes: { decrement: 1 } }
+            });
+        }
+
+        if (existingDislike) {
+            await prisma.ideaDislike.delete({ where: { id: existingDislike.id } });
+        } else {
+            await prisma.ideaDislike.create({ data: { userId, ideaId } });
+        }
+
+        revalidatePath("/dashboard/product-lab");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle idea dislike:", error);
+        return { success: false, error: "Failed to toggle dislike" };
     }
 }

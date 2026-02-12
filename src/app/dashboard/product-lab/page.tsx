@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { ThumbsUp, MessageSquare, Plus, Rocket, Eye, Trash2, Clock, X, Send } from 'lucide-react'
+import { ThumbsUp, MessageSquare, Plus, Rocket, Eye, Trash2, Clock, X, Send, ThumbsDown } from 'lucide-react'
 import { ActivityLog } from '@/components/dashboard/activity-log'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { cn } from '@/lib/utils'
-import { getIdeas, createIdea, updateIdea, deleteIdea, toggleVote } from '@/app/actions/idea'
+import { getIdeas, createIdea, updateIdea, deleteIdea, toggleIdeaLike, toggleIdeaDislike } from '@/app/actions/idea'
 import { addComment } from '@/app/actions/comment'
 import { getCurrentUser } from '@/app/actions/user'
 
@@ -82,10 +82,79 @@ export default function ProductLabPage() {
         }
     }
 
-    const handleUpvote = async (ideaId: string) => {
+    const handleLike = async (e: React.MouseEvent, idea: any) => {
+        e.stopPropagation()
         if (!currentUser) return
-        const result = await toggleVote(ideaId, currentUser.id)
-        if (result.success) {
+
+        // Optimistic update
+        const isLiked = idea.votes?.some((v: any) => v.userId === currentUser.id)
+        const isDisliked = idea.dislikes?.some((v: any) => v.userId === currentUser.id)
+
+        const newIdeas = ideas.map(i => {
+            if (i.id === idea.id) {
+                let newVotes = [...(i.votes || [])]
+                let newDislikes = [...(i.dislikes || [])]
+                let newUpvotes = i.upvotes
+
+                if (isLiked) {
+                    newVotes = newVotes.filter(v => v.userId !== currentUser.id)
+                    newUpvotes--
+                } else {
+                    newVotes.push({ userId: currentUser.id })
+                    newUpvotes++
+                    if (isDisliked) {
+                        newDislikes = newDislikes.filter(v => v.userId !== currentUser.id)
+                    }
+                }
+                return { ...i, votes: newVotes, dislikes: newDislikes, upvotes: newUpvotes }
+            }
+            return i
+        })
+        setIdeas(newIdeas)
+        if (openCommentIdea?.id === idea.id) {
+            setOpenCommentIdea(newIdeas.find(i => i.id === idea.id))
+        }
+
+        const result = await toggleIdeaLike(idea.id, currentUser.id)
+        if (!result.success) {
+            fetchData()
+        }
+    }
+
+    const handleDislike = async (e: React.MouseEvent, idea: any) => {
+        e.stopPropagation()
+        if (!currentUser) return
+
+        // Optimistic update
+        const isLiked = idea.votes?.some((v: any) => v.userId === currentUser.id)
+        const isDisliked = idea.dislikes?.some((v: any) => v.userId === currentUser.id)
+
+        const newIdeas = ideas.map(i => {
+            if (i.id === idea.id) {
+                let newVotes = [...(i.votes || [])]
+                let newDislikes = [...(i.dislikes || [])]
+                let newUpvotes = i.upvotes
+
+                if (isDisliked) {
+                    newDislikes = newDislikes.filter(v => v.userId !== currentUser.id)
+                } else {
+                    newDislikes.push({ userId: currentUser.id })
+                    if (isLiked) {
+                        newVotes = newVotes.filter(v => v.userId !== currentUser.id)
+                        newUpvotes--
+                    }
+                }
+                return { ...i, votes: newVotes, dislikes: newDislikes, upvotes: newUpvotes }
+            }
+            return i
+        })
+        setIdeas(newIdeas)
+        if (openCommentIdea?.id === idea.id) {
+            setOpenCommentIdea(newIdeas.find(i => i.id === idea.id))
+        }
+
+        const result = await toggleIdeaDislike(idea.id, currentUser.id)
+        if (!result.success) {
             fetchData()
         }
     }
@@ -120,10 +189,16 @@ export default function ProductLabPage() {
             userId: currentUser.id
         })
 
-        if (result.success) {
+        if (!result.success) {
+            alert("Failed to add comment")
             fetchData()
         } else {
-            alert("Failed to add comment")
+            // Silently refresh in background to ensure consistency
+            getIdeas().then(data => {
+                setIdeas(data)
+                const currentOpen = data.find((i: any) => i.id === openCommentIdea.id)
+                if (currentOpen) setOpenCommentIdea(currentOpen)
+            })
         }
     }
 
@@ -286,19 +361,34 @@ export default function ProductLabPage() {
 
                                         <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
                                             <button
-                                                onClick={() => handleUpvote(idea.id)}
+                                                onClick={(e) => handleLike(e, idea)}
                                                 className={cn(
-                                                    "flex items-center gap-2 transition-colors group/btn",
+                                                    "flex items-center gap-2 transition-colors pr-2",
                                                     idea.votes?.some((v: any) => v.userId === currentUser?.id)
                                                         ? "text-purple-600"
                                                         : "text-slate-500 hover:text-purple-600"
                                                 )}
                                             >
                                                 <ThumbsUp className={cn(
-                                                    "w-4 h-4 group-hover/btn:scale-110 transition-transform",
+                                                    "w-4 h-4 transition-transform active:scale-110",
                                                     idea.votes?.some((v: any) => v.userId === currentUser?.id) && "fill-current"
                                                 )} />
                                                 <span className="font-medium">{idea.upvotes}</span>
+                                            </button>
+
+                                            <button
+                                                onClick={(e) => handleDislike(e, idea)}
+                                                className={cn(
+                                                    "flex items-center gap-2 transition-colors pr-2",
+                                                    idea.dislikes?.some((v: any) => v.userId === currentUser?.id)
+                                                        ? "text-red-500"
+                                                        : "text-slate-500 hover:text-red-500"
+                                                )}
+                                            >
+                                                <ThumbsDown className={cn(
+                                                    "w-4 h-4 transition-transform active:scale-110",
+                                                    idea.dislikes?.some((v: any) => v.userId === currentUser?.id) && "fill-current"
+                                                )} />
                                             </button>
 
                                             <button

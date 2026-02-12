@@ -8,6 +8,7 @@ export async function getSOPs() {
         const sops = await prisma.sOP.findMany({
             include: {
                 likes: true,
+                dislikes: true,
                 comments: {
                     include: {
                         user: {
@@ -127,11 +128,10 @@ export async function incrementSOPViews(id: string) {
     }
 }
 
+// Simplified revalidate
 export async function deleteSOP(id: string) {
     try {
-        await prisma.sOP.delete({
-            where: { id }
-        });
+        await prisma.sOP.delete({ where: { id } });
         revalidatePath("/dashboard/university");
         return { success: true };
     } catch (error) {
@@ -143,25 +143,22 @@ export async function deleteSOP(id: string) {
 export async function toggleSOPLike(sopId: string, userId: string) {
     try {
         const existingLike = await prisma.sOPLike.findUnique({
-            where: {
-                userId_sopId: {
-                    userId,
-                    sopId
-                }
-            }
+            where: { userId_sopId: { userId, sopId } }
         });
 
+        const existingDislike = await prisma.sOPDislike.findUnique({
+            where: { userId_sopId: { userId, sopId } }
+        });
+
+        // Remove dislike if exists
+        if (existingDislike) {
+            await prisma.sOPDislike.delete({ where: { id: existingDislike.id } });
+        }
+
         if (existingLike) {
-            await prisma.sOPLike.delete({
-                where: { id: existingLike.id }
-            });
+            await prisma.sOPLike.delete({ where: { id: existingLike.id } });
         } else {
-            await prisma.sOPLike.create({
-                data: {
-                    userId,
-                    sopId
-                }
-            });
+            await prisma.sOPLike.create({ data: { userId, sopId } });
         }
 
         revalidatePath("/dashboard/university");
@@ -171,3 +168,34 @@ export async function toggleSOPLike(sopId: string, userId: string) {
         return { success: false, error: "Failed to toggle like" };
     }
 }
+
+export async function toggleSOPDislike(sopId: string, userId: string) {
+    try {
+        const existingDislike = await prisma.sOPDislike.findUnique({
+            where: { userId_sopId: { userId, sopId } }
+        });
+
+        const existingLike = await prisma.sOPLike.findUnique({
+            where: { userId_sopId: { userId, sopId } }
+        });
+
+        // Remove like if exists
+        if (existingLike) {
+            await prisma.sOPLike.delete({ where: { id: existingLike.id } });
+        }
+
+        if (existingDislike) {
+            await prisma.sOPDislike.delete({ where: { id: existingDislike.id } });
+        } else {
+            await prisma.sOPDislike.create({ data: { userId, sopId } });
+        }
+
+        revalidatePath("/dashboard/university");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to toggle SOP dislike:", error);
+        return { success: false, error: "Failed to toggle dislike" };
+    }
+}
+
+
