@@ -211,11 +211,13 @@ export default function UniversityPage() {
                                 >
                                     <div className={cn("h-40 relative flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950")}>
                                         {sop.featureImage ? (
-                                            <img src={sop.featureImage} alt={sop.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity" />
+                                            <img src={sop.featureImage} alt={sop.title} className={cn("absolute inset-0 w-full h-full object-cover transition-opacity", sop.videoUrl ? "opacity-60 group-hover:opacity-40" : "opacity-100")} />
                                         ) : null}
-                                        <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform relative z-10">
-                                            <PlayCircle className="w-6 h-6 text-white" />
-                                        </div>
+                                        {sop.videoUrl && (
+                                            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform relative z-10">
+                                                <PlayCircle className="w-6 h-6 text-white" />
+                                            </div>
+                                        )}
                                         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                             <button
                                                 onClick={(e) => {
