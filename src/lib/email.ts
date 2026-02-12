@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { prisma } from "@/lib/prisma"
+import { Resend } from 'resend';
 
 type EmailOptions = {
     to: string;
@@ -63,6 +64,33 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
 
             const data = await response.json();
             console.log("sendEmail: Brevo Success", data);
+            return { success: true };
+
+        } else if (settings.emailProvider === 'resend' || ((settings as any).resendApiKey && !settings.emailProvider) || process.env.RESEND_API_KEY) {
+            const resendApiKey = (settings as any).resendApiKey || process.env.RESEND_API_KEY;
+
+            if (!resendApiKey) {
+                console.error("sendEmail: Resend selected but API key is missing");
+                return { success: false, error: "Resend API Key is missing" };
+            }
+            console.log("sendEmail: Using Resend API");
+
+            const resend = new Resend(resendApiKey);
+
+            const { data, error } = await resend.emails.send({
+                from: `${senderName} <${fromEmail}>`, // Resend requires a verified domain or uses their testing domain
+                to: [to],
+                subject: subject,
+                html: html || text || '',
+                text: text || '',
+            });
+
+            if (error) {
+                console.error("sendEmail: Resend Error", error);
+                return { success: false, error: error.message };
+            }
+
+            console.log("sendEmail: Resend Success", data);
             return { success: true };
 
         } else if (settings.emailProvider === 'smtp' || !settings.emailProvider) { // Default to SMTP if not set

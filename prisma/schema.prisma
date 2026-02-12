@@ -49,8 +49,9 @@ model SystemSettings {
   yearlyLeaveDays  Int      @default(20)
   yearlyLeaveDates String?
   // Email Settings
-  emailProvider    String   @default("smtp") // "smtp" or "brevo"
+  emailProvider    String   @default("smtp") // "smtp", "brevo", "resend"
   brevoApiKey      String?
+  resendApiKey     String?
   smtpHost         String?
   smtpPort         Int?
   smtpUser         String?

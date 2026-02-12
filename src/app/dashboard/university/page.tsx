@@ -29,6 +29,37 @@ export default function UniversityPage() {
 
     const [currentUser, setCurrentUser] = useState<any>(null)
 
+    // Helper to compress image
+    const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Limit width to 800px
+                    const scaleSize = MAX_WIDTH / img.width;
+                    const newWidth = MAX_WIDTH;
+                    const newHeight = img.height * scaleSize;
+
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+
+                    // Compress to JPEG with 0.7 quality
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(compressedDataUrl);
+                };
+                img.onerror = (error) => reject(error);
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
     const fetchSops = async () => {
         try {
             const [data, userData] = await Promise.all([
@@ -336,14 +367,16 @@ export default function UniversityPage() {
                                             <input
                                                 type="file"
                                                 accept="image/*"
-                                                onChange={(e) => {
+                                                onChange={async (e) => {
                                                     const file = e.target.files?.[0]
                                                     if (file) {
-                                                        const reader = new FileReader()
-                                                        reader.onloadend = () => {
-                                                            setNewSop({ ...newSop, featureImage: reader.result as string })
+                                                        try {
+                                                            const compressed = await compressImage(file);
+                                                            setNewSop({ ...newSop, featureImage: compressed })
+                                                        } catch (error) {
+                                                            console.error("Error compressing image", error);
+                                                            alert("Failed to process image")
                                                         }
-                                                        reader.readAsDataURL(file)
                                                     }
                                                 }}
                                                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
@@ -480,14 +513,16 @@ export default function UniversityPage() {
                                             <input
                                                 type="file"
                                                 accept="image/*"
-                                                onChange={(e) => {
+                                                onChange={async (e) => {
                                                     const file = e.target.files?.[0]
                                                     if (file) {
-                                                        const reader = new FileReader()
-                                                        reader.onloadend = () => {
-                                                            setEditingSop({ ...editingSop, featureImage: reader.result as string })
+                                                        try {
+                                                            const compressed = await compressImage(file);
+                                                            setEditingSop({ ...editingSop, featureImage: compressed })
+                                                        } catch (error) {
+                                                            console.error("Error compressing image", error);
+                                                            alert("Failed to process image")
                                                         }
-                                                        reader.readAsDataURL(file)
                                                     }
                                                 }}
                                                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
