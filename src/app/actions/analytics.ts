@@ -2,9 +2,19 @@
 
 import { prisma } from "@/lib/prisma"
 import { startOfDay, endOfDay, subDays, format } from "date-fns"
+import { getCurrentUser } from "@/app/actions/user"
 
 export async function getAnalyticsData() {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'EDITOR')) {
+            return {
+                attendance: [],
+                requests: [],
+                totalUsers: 0
+            };
+        }
+
         const today = new Date()
         const last7Days = Array.from({ length: 7 }).map((_, i) => {
             const d = subDays(today, 6 - i)

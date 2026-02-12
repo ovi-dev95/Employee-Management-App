@@ -57,6 +57,9 @@ export async function getCurrentUser() {
     }
 }
 
+// Note: getCurrentUser is already exported above, we can use it directly or just import cookies/prisma again if needed logic-wise. But since they are in same file...
+// However, since we are using these as server actions, we need to ensure we get the user session correctly.
+
 export async function updateUser(id: string, data: {
     name?: string;
     email?: string;
@@ -69,6 +72,29 @@ export async function updateUser(id: string, data: {
 }) {
     try {
         if (!id) throw new Error("User ID is required for update");
+
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Unauthorized");
+
+        // Only Admin can update role/department/position of others
+        // Users can update their own name/avatar/cover/location
+        // Admin can update everything for everyone
+
+        const isSelf = currentUser.id === id;
+        const isAdmin = currentUser.role === 'ADMIN';
+
+        if (!isAdmin && !isSelf) {
+            return { success: false, error: "You do not have permission to update this user." };
+        }
+
+        // Prevent non-admins from changing roles or sensitive fields
+        if (!isAdmin && (data.role || data.department || data.position)) {
+            // Filter out restricted fields for non-admins
+            delete data.role;
+            delete data.department;
+            delete data.position;
+        }
+
         console.log(`updateUser: Updating user ${id}`, Object.keys(data));
         const user = await prisma.user.update({
             where: { id },
@@ -86,6 +112,17 @@ export async function updateUser(id: string, data: {
 export async function deleteUser(id: string) {
     try {
         if (!id) throw new Error("User ID is required for deletion");
+
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+            return { success: false, error: "Only Administrators can delete users." };
+        }
+
+        // Prevent deleting yourself
+        if (currentUser.id === id) {
+            return { success: false, error: "You cannot delete your own account." };
+        }
+
         // In a real app, you might want to check permissions or dependencies
         await prisma.user.delete({
             where: { id },
@@ -106,6 +143,11 @@ export async function createUser(data: {
     password?: string;
 }) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+            return { success: false, error: "Only Administrators can create users." };
+        }
+
         console.log("createUser: Creating user", data.email);
         // Check if user already exists
         const existing = await prisma.user.findUnique({ where: { email: data.email } });
@@ -171,6 +213,14 @@ export async function createUser(data: {
 
 export async function updatePassword(userId: string, currentPassword: string, newPassword: string) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) return { success: false, error: "Unauthorized" };
+
+        // Users can only update their own password
+        if (currentUser.id !== userId) {
+            return { success: false, error: "You can only update your own password." };
+        }
+
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return { success: false, error: "User not found" };
 

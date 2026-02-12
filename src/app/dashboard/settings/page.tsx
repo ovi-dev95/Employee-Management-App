@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Save, Globe, Shield, Users, CreditCard, Bell, Database, Download, Trash2, Smartphone, TerminalSquare, Clock, BarChart3, CalendarDays, CheckCircle2, AlertCircle, Plus, X, Mail, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateSystemSettings, getSystemSettings, testEmailConfiguration } from '@/app/actions/settings'
-import { getUsers, updateUser, deleteUser, createUser } from '@/app/actions/user'
+import { getUsers, updateUser, deleteUser, createUser, getCurrentUser } from '@/app/actions/user'
 
 export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('general')
     const [isLoading, setIsLoading] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
     const [users, setUsers] = useState<any[]>([])
+    const [currentUser, setCurrentUser] = useState<any>(null)
     const [settings, setSettings] = useState<any>({
         lookerStudioUrl: "",
         checkInTime: "12:00 PM",
@@ -28,13 +29,15 @@ export default function SettingsPage() {
         pointValues: { login: 1, idea: 10, request: 5, sop: 20 }
     })
 
-    const fetchUsers = async () => {
-        const usersData = await getUsers()
-        if (usersData) setUsers(usersData)
-    }
+    const fetchData = async () => {
+        const [usersData, currentUserData, settingsData] = await Promise.all([
+            getUsers(),
+            getCurrentUser(),
+            getSystemSettings()
+        ])
 
-    const fetchSettings = async () => {
-        const settingsData = await getSystemSettings()
+        if (usersData) setUsers(usersData)
+        if (currentUserData) setCurrentUser(currentUserData)
         if (settingsData) {
             setSettings({
                 ...settingsData,
@@ -45,8 +48,7 @@ export default function SettingsPage() {
     }
 
     useEffect(() => {
-        fetchSettings()
-        fetchUsers()
+        fetchData()
     }, [])
 
     const handleSave = async () => {
@@ -82,6 +84,50 @@ export default function SettingsPage() {
         setSettings((prev: any) => ({ ...prev, [field]: value }))
     }
 
+    const isAdmin = currentUser?.role === 'ADMIN'
+
+    // Define accessible tabs based on role
+    // Admin: All
+    // Others: General (view only?), Security (view only?), Notifications
+    // Actually, "General" has organization settings which are Admin only usually.
+    // The previous implementation allowed editing "General". I'll restrict editing/viewing sensitive admin parts.
+
+    // User requested: "Subscribers cannot add users, data & import, integrations, leave managemennt, gamification management these can only have the admin others will not see this."
+
+    const canManageTeam = isAdmin;
+    const canManageData = isAdmin;
+    const canManageIntegrations = isAdmin;
+    const canManageLeave = isAdmin;
+    const canManageGamification = isAdmin;
+    const canManageBilling = isAdmin;
+    const canManageEmail = isAdmin;
+    const canManageGeneral = isAdmin; // Assuming Organization Name/Timezone etc is Admin only
+
+    // Always show Security (Password Policy view) and Notifications (Personal)
+    // Actually SecuritySettings component shows 2FA (Admin rec) and Password Policy.
+    // For now, I'll let everyone see Security and Notifications.
+
+    // If current activeTab is restricted, switch to a safe one
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const restrictedTabs = [];
+        if (!canManageGeneral) restrictedTabs.push('general');
+        if (!canManageTeam) restrictedTabs.push('members');
+        if (!canManageEmail) restrictedTabs.push('email');
+        if (!canManageBilling) restrictedTabs.push('billing');
+        if (!canManageData) restrictedTabs.push('data');
+        if (!canManageIntegrations) restrictedTabs.push('integrations');
+        if (!canManageLeave) restrictedTabs.push('leave');
+        if (!canManageGamification) restrictedTabs.push('points');
+
+        if (restrictedTabs.includes(activeTab)) {
+            setActiveTab('notifications');
+        }
+    }, [currentUser, activeTab]);
+
+    if (!currentUser) return null; // Or loading state
+
     return (
         <div className="p-8 max-w-5xl mx-auto space-y-8 relative">
             <AnimatePresence>
@@ -106,34 +152,36 @@ export default function SettingsPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Settings</h1>
                     <p className="text-slate-500 dark:text-slate-400">Manage your organization and platform preferences.</p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed group"
-                >
-                    {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4 group-hover:scale-110 transition-transform" /> Save Changes
-                        </>
-                    )}
-                </button>
+                {isAdmin && (
+                    <button
+                        onClick={handleSave}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed group"
+                    >
+                        {isLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4 group-hover:scale-110 transition-transform" /> Save Changes
+                            </>
+                        )}
+                    </button>
+                )}
             </header>
 
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Sidebar Navigation */}
                 <nav className="w-full md:w-64 space-y-2">
-                    <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={Globe}>General</TabButton>
-                    <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users}>Team Members</TabButton>
+                    {canManageGeneral && <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={Globe}>General</TabButton>}
+                    {canManageTeam && <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users}>Team Members</TabButton>}
                     <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={Shield}>Security</TabButton>
-                    <TabButton active={activeTab === 'email'} onClick={() => setActiveTab('email')} icon={Mail}>Email Settings</TabButton>
+                    {canManageEmail && <TabButton active={activeTab === 'email'} onClick={() => setActiveTab('email')} icon={Mail}>Email Settings</TabButton>}
                     <TabButton active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} icon={Bell}>Notifications</TabButton>
-                    <TabButton active={activeTab === 'billing'} onClick={() => setActiveTab('billing')} icon={CreditCard}>Billing</TabButton>
-                    <TabButton active={activeTab === 'data'} onClick={() => setActiveTab('data')} icon={Database}>Data & Export</TabButton>
-                    <TabButton active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={TerminalSquare}>Integrations</TabButton>
-                    <TabButton active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} icon={CalendarDays}>Leave Management</TabButton>
-                    <TabButton active={activeTab === 'points'} onClick={() => setActiveTab('points')} icon={Trophy}>Gamification (Points)</TabButton>
+                    {canManageBilling && <TabButton active={activeTab === 'billing'} onClick={() => setActiveTab('billing')} icon={CreditCard}>Billing</TabButton>}
+                    {canManageData && <TabButton active={activeTab === 'data'} onClick={() => setActiveTab('data')} icon={Database}>Data & Export</TabButton>}
+                    {canManageIntegrations && <TabButton active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={TerminalSquare}>Integrations</TabButton>}
+                    {canManageLeave && <TabButton active={activeTab === 'leave'} onClick={() => setActiveTab('leave')} icon={CalendarDays}>Leave Management</TabButton>}
+                    {canManageGamification && <TabButton active={activeTab === 'points'} onClick={() => setActiveTab('points')} icon={Trophy}>Gamification</TabButton>}
                 </nav>
 
                 {/* Content Area */}
@@ -144,16 +192,16 @@ export default function SettingsPage() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {activeTab === 'general' && <GeneralSettings settings={settings} updateField={updateField} />}
-                        {activeTab === 'members' && <MembersSettings users={users} onRefresh={fetchUsers} />}
+                        {activeTab === 'general' && canManageGeneral && <GeneralSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'members' && canManageTeam && <MembersSettings users={users} onRefresh={fetchData} />}
                         {activeTab === 'security' && <SecuritySettings />}
-                        {activeTab === 'email' && <EmailSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'email' && canManageEmail && <EmailSettings settings={settings} updateField={updateField} />}
                         {activeTab === 'notifications' && <NotificationSettings />}
-                        {activeTab === 'billing' && <BillingSettings />}
-                        {activeTab === 'data' && <DataExportSettings />}
-                        {activeTab === 'integrations' && <IntegrationSettings settings={settings} updateField={updateField} />}
-                        {activeTab === 'leave' && <LeaveManagementSettings settings={settings} updateField={updateField} />}
-                        {activeTab === 'points' && <PointsSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'billing' && canManageBilling && <BillingSettings />}
+                        {activeTab === 'data' && canManageData && <DataExportSettings />}
+                        {activeTab === 'integrations' && canManageIntegrations && <IntegrationSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'leave' && canManageLeave && <LeaveManagementSettings settings={settings} updateField={updateField} />}
+                        {activeTab === 'points' && canManageGamification && <PointsSettings settings={settings} updateField={updateField} />}
                     </motion.div>
                 </div>
             </div>

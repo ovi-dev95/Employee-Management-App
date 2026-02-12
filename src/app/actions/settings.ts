@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { getCurrentUser } from "@/app/actions/user"
 
 export async function updateSystemSettings(data: {
     lookerStudioUrl?: string;
@@ -21,6 +22,11 @@ export async function updateSystemSettings(data: {
     pointValues?: string;
 }) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+            return { success: false, error: "Only Administrators can modify system settings." };
+        }
+
         const settings = await prisma.systemSettings.upsert({
             where: { id: "global" },
             update: {
