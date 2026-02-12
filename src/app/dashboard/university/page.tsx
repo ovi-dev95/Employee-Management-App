@@ -319,14 +319,36 @@ export default function UniversityPage() {
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image URL</label>
-                                        <input
-                                            type="url"
-                                            placeholder="Image URL"
-                                            value={newSop.featureImage}
-                                            onChange={(e) => setNewSop({ ...newSop, featureImage: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                        />
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image</label>
+                                        <div className="space-y-2">
+                                            {newSop.featureImage && (
+                                                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                                    <img src={newSop.featureImage} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewSop({ ...newSop, featureImage: '' })}
+                                                        className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-red-500 text-white rounded-full transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        const reader = new FileReader()
+                                                        reader.onloadend = () => {
+                                                            setNewSop({ ...newSop, featureImage: reader.result as string })
+                                                        }
+                                                        reader.readAsDataURL(file)
+                                                    }
+                                                }}
+                                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -441,13 +463,36 @@ export default function UniversityPage() {
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image URL</label>
-                                        <input
-                                            type="url"
-                                            value={editingSop.featureImage || ''}
-                                            onChange={(e) => setEditingSop({ ...editingSop, featureImage: e.target.value })}
-                                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                        />
+                                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Feature Image</label>
+                                        <div className="space-y-2">
+                                            {editingSop.featureImage && (
+                                                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                                    <img src={editingSop.featureImage} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingSop({ ...editingSop, featureImage: '' })}
+                                                        className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-red-500 text-white rounded-full transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0]
+                                                    if (file) {
+                                                        const reader = new FileReader()
+                                                        reader.onloadend = () => {
+                                                            setEditingSop({ ...editingSop, featureImage: reader.result as string })
+                                                        }
+                                                        reader.readAsDataURL(file)
+                                                    }
+                                                }}
+                                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 

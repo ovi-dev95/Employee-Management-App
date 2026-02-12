@@ -65,6 +65,7 @@ export async function updateUser(id: string, data: {
     position?: string;
     avatar?: string;
     cover?: string;
+    location?: string;
 }) {
     try {
         if (!id) throw new Error("User ID is required for update");
