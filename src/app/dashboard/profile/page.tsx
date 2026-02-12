@@ -195,7 +195,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Navigation Tabs */}
-                    <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
                         <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={User2}>Overview</TabButton>
                         <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={Settings}>Settings</TabButton>
                         <TabButton active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} icon={Bell}>Notifications</TabButton>
@@ -405,7 +405,7 @@ function TabButton({ active, onClick, icon: Icon, children }: any) {
         <button
             onClick={onClick}
             className={cn(
-                "pb-4 px-2 text-sm font-medium border-b-2 transition-all flex items-center gap-2",
+                "pb-4 px-2 text-sm font-medium border-b-2 transition-all flex items-center gap-2 whitespace-nowrap",
                 active
                     ? "border-blue-500 text-blue-600 dark:text-blue-400"
                     : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -452,12 +452,12 @@ function ActivityItem({ action, target, date, points }: any) {
 
 function NotificationToggle({ title, description, defaultChecked }: any) {
     return (
-        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-800 gap-4">
             <div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-sm">{title}</h4>
                 <p className="text-xs text-slate-500 max-w-xs">{description}</p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer self-start sm:self-auto">
                 <input type="checkbox" defaultChecked={defaultChecked} className="sr-only peer" />
                 <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>

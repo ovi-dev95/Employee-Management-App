@@ -171,7 +171,7 @@ export default function SettingsPage() {
 
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Sidebar Navigation */}
-                <nav className="w-full md:w-64 space-y-2">
+                <nav className="w-full md:w-64 flex md:flex-col gap-2 overflow-x-auto pb-4 md:pb-0 scrollbar-hide shrink-0">
                     {canManageGeneral && <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={Globe}>General</TabButton>}
                     {canManageTeam && <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={Users}>Team Members</TabButton>}
                     <TabButton active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={Shield}>Security</TabButton>
@@ -185,7 +185,7 @@ export default function SettingsPage() {
                 </nav>
 
                 {/* Content Area */}
-                <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 min-h-[500px] shadow-sm">
+                <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 md:p-8 min-h-[500px] shadow-sm overflow-hidden">
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, x: 20 }}
@@ -347,13 +347,13 @@ function TabButton({ active, onClick, icon: Icon, children }: any) {
         <button
             onClick={onClick}
             className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium whitespace-nowrap shrink-0",
                 active
                     ? "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 shadow-sm"
                     : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white"
             )}
         >
-            <Icon className={cn("w-5 h-5", active ? "text-blue-600 dark:text-blue-400" : "text-slate-400")} />
+            <Icon className={cn("w-5 h-5 shrink-0", active ? "text-blue-600 dark:text-blue-400" : "text-slate-400")} />
             {children}
         </button>
     )
@@ -518,17 +518,17 @@ function MembersSettings({ users, onRefresh }: { users: any[], onRefresh: () => 
                     users.map((member, i) => {
                         return (
                             <div key={member.id} className="flex flex-col p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 transition-all group">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+                                        <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold shrink-0">
                                             {member.name?.[0] || '?'}
                                         </div>
-                                        <div>
-                                            <p className="font-medium text-slate-900 dark:text-white">{member.name}</p>
-                                            <p className="text-xs text-slate-500">{member.email}</p>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-slate-900 dark:text-white truncate">{member.name}</p>
+                                            <p className="text-xs text-slate-500 truncate">{member.email}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
                                             {member.role}
                                         </span>
